@@ -133,7 +133,7 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
                   value={codename}
                   onChange={(e) => setCodename(e.target.value)}
                   placeholder="E.g., Nickname"
-                  className="w-full bg-chamber-bg border border-chamber-cyan/20 hover:border-chamber-cyan/40 focus:border-chamber-cyan/70 focus:outline-none rounded-lg px-4 py-2 sm:py-2.5 text-chamber-text font-mono text-xs sm:text-sm tracking-wider placeholder:text-chamber-secondary/40"
+                  className="w-full bg-chamber-bg border border-chamber-cyan/20 hover:border-chamber-cyan/40 focus:border-chamber-cyan/70 focus:outline-none rounded-lg px-4 py-2 sm:py-2.5 text-chamber-text font-mono text-base sm:text-sm tracking-wider placeholder:text-chamber-secondary/40"
                   required
                 />
               </div>
@@ -170,7 +170,7 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
                   value={codename}
                   onChange={(e) => setCodename(e.target.value)}
                   placeholder="E.g., Nickname"
-                  className="w-full bg-chamber-bg border border-chamber-cyan/20 hover:border-chamber-cyan/40 focus:border-chamber-cyan/70 focus:outline-none rounded-lg px-4 py-2.5 text-chamber-text font-mono text-sm tracking-wider placeholder:text-chamber-secondary/40"
+                  className="w-full bg-chamber-bg border border-chamber-cyan/20 hover:border-chamber-cyan/40 focus:border-chamber-cyan/70 focus:outline-none rounded-lg px-4 py-2 sm:py-2.5 text-chamber-text font-mono text-base sm:text-sm tracking-wider placeholder:text-chamber-secondary/40"
                   required
                 />
               </div>
@@ -190,7 +190,7 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
                   value={chamberId}
                   onChange={(e) => setChamberId(e.target.value.toUpperCase())}
                   placeholder="K7M2QF"
-                  className="w-full bg-chamber-bg border border-chamber-cyan/20 hover:border-chamber-cyan/40 focus:border-chamber-cyan/70 focus:outline-none rounded-lg px-4 py-2.5 text-chamber-text font-mono text-sm tracking-widest uppercase placeholder:text-chamber-secondary/40"
+                  className="w-full bg-chamber-bg border border-chamber-cyan/20 hover:border-chamber-cyan/40 focus:border-chamber-cyan/70 focus:outline-none rounded-lg px-4 py-2 sm:py-2.5 text-chamber-text font-mono text-base sm:text-sm tracking-widest uppercase placeholder:text-chamber-secondary/40"
                   required
                 />
               </div>

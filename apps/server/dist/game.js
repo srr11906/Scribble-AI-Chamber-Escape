@@ -53,8 +53,8 @@ function generateChamberId() {
     }
     return code;
 }
-function serializeSession(session) {
-    return {
+function serializeSession(session, includeCanvas = false) {
+    const state = {
         chamberId: session.chamberId,
         phase: session.phase,
         config: session.config,
@@ -65,12 +65,15 @@ function serializeSession(session) {
         chosenWord: session.phase === 'ROUND_RESULTS' || session.phase === 'FINAL_RESULTS' ? session.chosenWord : null,
         timer: session.timer,
         hints: session.hints,
-        canvasHistory: session.canvasHistory,
     };
+    if (includeCanvas) {
+        state.canvasHistory = session.canvasHistory;
+    }
+    return state;
 }
 async function saveSessionToRedis(session) {
     session.lastActiveTime = Date.now();
-    const state = serializeSession(session);
+    const state = serializeSession(session, true);
     // We omit timeouts and server-only variables for Redis
     await (0, redis_1.setVal)(`chamber:${session.chamberId}`, JSON.stringify({
         ...state,

@@ -6,7 +6,7 @@ import { Eraser, Paintbrush, Undo, Trash2 } from 'lucide-react';
 interface DrawingCanvasProps {
   isDrawer: boolean;
   socket: Socket<ServerToClientEvents, ClientToServerEvents> | null;
-  canvasHistory: CompressedStroke[];
+  canvasHistory?: CompressedStroke[];
   chamberId: string;
 }
 
@@ -37,6 +37,7 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
 
   // Sync canvasHistory from props
   useEffect(() => {
+    if (canvasHistory === undefined) return;
     localHistoryRef.current = canvasHistory;
     setLocalHistory(canvasHistory);
     scheduleRedraw();

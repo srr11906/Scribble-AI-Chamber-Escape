@@ -21,7 +21,7 @@ export interface ChamberSession {
 export declare const activeSessions: Map<string, ChamberSession>;
 export declare function clearSessionTimers(session: ChamberSession): void;
 export declare function generateChamberId(): string;
-export declare function serializeSession(session: ChamberSession): ChamberState;
+export declare function serializeSession(session: ChamberSession, includeCanvas?: boolean): ChamberState;
 export declare function saveSessionToRedis(session: ChamberSession): Promise<void>;
 export declare function createChamber(chamberId: string, hostSocketId: string, codename: string): ChamberSession;
 export declare function generateHints(word: string, revealedIndices: number[]): string;

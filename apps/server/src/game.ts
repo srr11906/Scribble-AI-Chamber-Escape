@@ -63,8 +63,8 @@ export function generateChamberId(): string {
   return code;
 }
 
-export function serializeSession(session: ChamberSession): ChamberState {
-  return {
+export function serializeSession(session: ChamberSession, includeCanvas = false): ChamberState {
+  const state: ChamberState = {
     chamberId: session.chamberId,
     phase: session.phase,
     config: session.config,
@@ -75,13 +75,18 @@ export function serializeSession(session: ChamberSession): ChamberState {
     chosenWord: session.phase === 'ROUND_RESULTS' || session.phase === 'FINAL_RESULTS' ? session.chosenWord : null,
     timer: session.timer,
     hints: session.hints,
-    canvasHistory: session.canvasHistory,
   };
+
+  if (includeCanvas) {
+    state.canvasHistory = session.canvasHistory;
+  }
+
+  return state;
 }
 
 export async function saveSessionToRedis(session: ChamberSession) {
   session.lastActiveTime = Date.now();
-  const state = serializeSession(session);
+  const state = serializeSession(session, true);
   // We omit timeouts and server-only variables for Redis
   await setVal(`chamber:${session.chamberId}`, JSON.stringify({
     ...state,

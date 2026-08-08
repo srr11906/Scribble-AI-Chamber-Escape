@@ -866,7 +866,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                 value={chatInput}
                 onChange={handleChatInputChange}
                 placeholder={isDrawer ? "DRAWER CANNOT GUESS" : me?.isVerified ? "IDENTITY VERIFIED" : me?.isSpectator ? "CHAT (SPECTATOR)..." : "ENTER GUESS CODE..."}
-                className="flex-1 bg-chamber-bg border border-chamber-cyan/20 focus:border-chamber-cyan/70 focus:outline-none rounded-lg px-3 py-2 text-xs font-mono text-chamber-text placeholder:text-chamber-secondary/35 disabled:opacity-40"
+                className="flex-1 bg-chamber-bg border border-chamber-cyan/20 focus:border-chamber-cyan/70 focus:outline-none rounded-lg px-3 py-2 text-base font-mono text-chamber-text placeholder:text-chamber-secondary/35 disabled:opacity-40"
               />
               <button
                 disabled={isDrawer || (phase === 'DRAWING' && me?.isVerified)}

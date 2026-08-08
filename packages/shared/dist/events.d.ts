@@ -2,6 +2,7 @@ import { ChamberState, CompressedStroke, ChatMessage, ChamberConfig } from './ty
 export interface ServerToClientEvents {
     chamberUpdated: (state: ChamberState) => void;
     drawStroke: (stroke: CompressedStroke) => void;
+    canvasRestore: (history: CompressedStroke[]) => void;
     clearCanvas: () => void;
     undoStroke: () => void;
     chatMessage: (msg: ChatMessage) => void;

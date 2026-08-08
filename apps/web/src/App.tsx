@@ -31,15 +31,24 @@ export const App: React.FC = () => {
     setIsMobileDevice(mobile);
 
     if (mobile) {
-      const prompted = sessionStorage.getItem('fullscreen_prompted');
-      if (!prompted) {
+      try {
+        const prompted = sessionStorage.getItem('fullscreen_prompted');
+        if (!prompted) {
+          setShowFullscreenPrompt(true);
+        }
+      } catch (e) {
+        // Fallback for private mode without session storage access
         setShowFullscreenPrompt(true);
       }
     }
   }, []);
 
   const handleEngageFullscreen = () => {
-    sessionStorage.setItem('fullscreen_prompted', 'true');
+    try {
+      sessionStorage.setItem('fullscreen_prompted', 'true');
+    } catch (e) {
+      console.warn("Storage write blocked.");
+    }
     setShowFullscreenPrompt(false);
     
     const doc = document.documentElement;
@@ -59,7 +68,11 @@ export const App: React.FC = () => {
   };
 
   const handleDismissFullscreen = () => {
-    sessionStorage.setItem('fullscreen_prompted', 'true');
+    try {
+      sessionStorage.setItem('fullscreen_prompted', 'true');
+    } catch (e) {
+      console.warn("Storage write blocked.");
+    }
     setShowFullscreenPrompt(false);
     audioSystem.playBeep();
   };
@@ -90,6 +103,16 @@ export const App: React.FC = () => {
     newSocket.on('chamberUpdated', (state: ChamberState) => {
       setChamberState(state);
       setError(null);
+    });
+
+    newSocket.on('canvasRestore', (history: any[]) => {
+      setChamberState(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          canvasHistory: history,
+        };
+      });
     });
 
     newSocket.on('error', (message: string) => {

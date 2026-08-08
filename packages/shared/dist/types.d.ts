@@ -55,5 +55,5 @@ export interface ChamberState {
     chosenWord: string | null;
     timer: number;
     hints: string;
-    canvasHistory: CompressedStroke[];
+    canvasHistory?: CompressedStroke[];
 }

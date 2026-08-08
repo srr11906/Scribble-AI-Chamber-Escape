@@ -62,5 +62,5 @@ export interface ChamberState {
   chosenWord: string | null; // Null for guessers during drawing, shown for drawer and in results
   timer: number; // Seconds remaining (Oxygen)
   hints: string; // E.g., "_ _ a _ _"
-  canvasHistory: CompressedStroke[]; // Backlog of drawing for newly connected players
+  canvasHistory?: CompressedStroke[]; // Backlog of drawing for newly connected players
 }

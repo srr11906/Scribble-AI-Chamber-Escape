@@ -3,6 +3,7 @@ import { ChamberState, StrokeSegment, CompressedStroke, ChatMessage, ChamberConf
 export interface ServerToClientEvents {
   chamberUpdated: (state: ChamberState) => void;
   drawStroke: (stroke: CompressedStroke) => void;
+  canvasRestore: (history: CompressedStroke[]) => void;
   clearCanvas: () => void;
   undoStroke: () => void;
   chatMessage: (msg: ChatMessage) => void;

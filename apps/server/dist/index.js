@@ -45,6 +45,9 @@ function sendChamberStateToSocket(socket, session) {
         playerState.chosenWord = session.chosenWord;
     }
     socket.emit('chamberUpdated', playerState);
+    if (session.canvasHistory && session.canvasHistory.length > 0) {
+        socket.emit('canvasRestore', session.canvasHistory);
+    }
 }
 function broadcastChamberState(session) {
     const state = (0, game_1.serializeSession)(session);
