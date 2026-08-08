@@ -19,7 +19,9 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
   canvasHistory,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const colorInputRef = useRef<HTMLInputElement>(null);
   const [color, setColor] = useState(COLORS[0]);
+  const [customColor, setCustomColor] = useState('#FF00FF');
   const [brushSize, setBrushSize] = useState(BRUSH_SIZES[1]);
   const [isEraser, setIsEraser] = useState(false);
   
@@ -310,6 +312,39 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
                 aria-label={`Select brush color ${c}`}
               />
             ))}
+            
+            {/* Custom Color Selector */}
+            <button
+              onClick={() => {
+                colorInputRef.current?.click();
+              }}
+              className={`w-11 h-11 md:w-7 md:h-7 rounded-full border transition-transform shrink-0 flex items-center justify-center relative overflow-hidden ${
+                color === customColor && !isEraser
+                  ? 'border-chamber-cyan scale-110 shadow-cyan-glow'
+                  : 'border-transparent hover:scale-105'
+              }`}
+              style={{
+                background: `conic-gradient(from 0deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)`
+              }}
+              title="Custom Color"
+              aria-label="Select custom color"
+            >
+              {color === customColor && !isEraser && (
+                <span className="absolute inset-1 rounded-full border border-chamber-bg" style={{ backgroundColor: customColor }} />
+              )}
+            </button>
+            <input
+              ref={colorInputRef}
+              type="color"
+              value={customColor}
+              onChange={(e) => {
+                setCustomColor(e.target.value);
+                setColor(e.target.value);
+                setIsEraser(false);
+              }}
+              className="hidden"
+            />
+
             <button
               onClick={() => setIsEraser(true)}
               className={`w-11 h-11 md:w-7 md:h-7 rounded-full flex items-center justify-center border transition-all shrink-0 ${

@@ -15,6 +15,7 @@ export interface ChamberSession {
   hints: string;
   revealedIndices: number[];
   canvasHistory: CompressedStroke[];
+  chatHistory?: ChatMessage[];
   lastActiveTime: number;
   drawerIndex: number; // Index in players array for current cycle
   wordSelectTimeout: NodeJS.Timeout | null;
@@ -210,7 +211,6 @@ export function startWordSelection(session: ChamberSession, broadcastState: () =
       const defaultWord = session.wordOptions[0] || 'idli';
       selectWord(session, drawer.id, defaultWord, broadcastState);
     } else {
-      saveSessionToRedis(session);
       broadcastState();
       session.wordSelectTimeout = setTimeout(tick, 1000);
     }
@@ -251,7 +251,6 @@ export function selectWord(session: ChamberSession, playerId: string, word: stri
     if (session.timer <= 0) {
       endRound(session, broadcastState);
     } else {
-      saveSessionToRedis(session);
       broadcastState();
       session.drawingTimeout = setTimeout(tick, 1000);
     }
@@ -328,7 +327,6 @@ export function endRound(session: ChamberSession, broadcastState: () => void) {
         startWordSelection(session, broadcastState);
       }
     } else {
-      saveSessionToRedis(session);
       broadcastState();
       session.resultsTimeout = setTimeout(tick, 1000);
     }

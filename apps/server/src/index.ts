@@ -80,6 +80,13 @@ function sendChamberStateToSocket(socket: Socket<ClientToServerEvents, ServerToC
   if (session.canvasHistory && session.canvasHistory.length > 0) {
     socket.emit('canvasRestore', session.canvasHistory);
   }
+  
+  // Play back chat history to the newly connected socket
+  if (session.chatHistory && session.chatHistory.length > 0) {
+    session.chatHistory.forEach(msg => {
+      socket.emit('chatMessage', msg);
+    });
+  }
 }
 
 function broadcastChamberState(session: ChamberSession) {
@@ -130,6 +137,10 @@ function pushAIAnnouncement(chamberId: string, text: string) {
     timestamp: Date.now(),
   };
 
+  if (!session.chatHistory) session.chatHistory = [];
+  session.chatHistory.push(msg);
+  if (session.chatHistory.length > 30) session.chatHistory.shift();
+
   io.to(chamberId).emit('chatMessage', msg);
   io.to(chamberId).emit('aiEvent', text);
 }
@@ -160,6 +171,14 @@ function pushSystemMessage(chamberId: string, text: string) {
     isAnnouncement: false,
     timestamp: Date.now(),
   };
+  
+  const session = activeSessions.get(chamberId);
+  if (session) {
+    if (!session.chatHistory) session.chatHistory = [];
+    session.chatHistory.push(msg);
+    if (session.chatHistory.length > 30) session.chatHistory.shift();
+  }
+
   io.to(chamberId).emit('chatMessage', msg);
 }
 
@@ -674,6 +693,10 @@ io.on('connection', (socket: Socket<ClientToServerEvents, ServerToClientEvents>)
     }
 
     // Normal message to all
+    if (!session.chatHistory) session.chatHistory = [];
+    session.chatHistory.push(chatMsg);
+    if (session.chatHistory.length > 30) session.chatHistory.shift();
+
     io.to(sessionDetails.chamberId).emit('chatMessage', chatMsg);
     if (callback) callback({ success: true });
   });

@@ -48,6 +48,12 @@ function sendChamberStateToSocket(socket, session) {
     if (session.canvasHistory && session.canvasHistory.length > 0) {
         socket.emit('canvasRestore', session.canvasHistory);
     }
+    // Play back chat history to the newly connected socket
+    if (session.chatHistory && session.chatHistory.length > 0) {
+        session.chatHistory.forEach(msg => {
+            socket.emit('chatMessage', msg);
+        });
+    }
 }
 function broadcastChamberState(session) {
     const state = (0, game_1.serializeSession)(session);
@@ -96,6 +102,11 @@ function pushAIAnnouncement(chamberId, text) {
         isAnnouncement: true,
         timestamp: Date.now(),
     };
+    if (!session.chatHistory)
+        session.chatHistory = [];
+    session.chatHistory.push(msg);
+    if (session.chatHistory.length > 30)
+        session.chatHistory.shift();
     io.to(chamberId).emit('chatMessage', msg);
     io.to(chamberId).emit('aiEvent', text);
 }
@@ -122,6 +133,14 @@ function pushSystemMessage(chamberId, text) {
         isAnnouncement: false,
         timestamp: Date.now(),
     };
+    const session = game_1.activeSessions.get(chamberId);
+    if (session) {
+        if (!session.chatHistory)
+            session.chatHistory = [];
+        session.chatHistory.push(msg);
+        if (session.chatHistory.length > 30)
+            session.chatHistory.shift();
+    }
     io.to(chamberId).emit('chatMessage', msg);
 }
 // Typing indicators state: chamberId -> { playerId: isTyping }
@@ -605,6 +624,11 @@ io.on('connection', (socket) => {
             return;
         }
         // Normal message to all
+        if (!session.chatHistory)
+            session.chatHistory = [];
+        session.chatHistory.push(chatMsg);
+        if (session.chatHistory.length > 30)
+            session.chatHistory.shift();
         io.to(sessionDetails.chamberId).emit('chatMessage', chatMsg);
         if (callback)
             callback({ success: true });

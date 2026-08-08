@@ -1,4 +1,4 @@
-import { GamePhase, Player, ChamberConfig, ChamberState, CompressedStroke } from 'shared';
+import { GamePhase, Player, ChamberConfig, ChamberState, CompressedStroke, ChatMessage } from 'shared';
 export interface ChamberSession {
     chamberId: string;
     phase: GamePhase;
@@ -12,6 +12,7 @@ export interface ChamberSession {
     hints: string;
     revealedIndices: number[];
     canvasHistory: CompressedStroke[];
+    chatHistory?: ChatMessage[];
     lastActiveTime: number;
     drawerIndex: number;
     wordSelectTimeout: NodeJS.Timeout | null;

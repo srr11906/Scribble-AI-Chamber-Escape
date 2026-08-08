@@ -187,7 +187,6 @@ function startWordSelection(session, broadcastState) {
             selectWord(session, drawer.id, defaultWord, broadcastState);
         }
         else {
-            saveSessionToRedis(session);
             broadcastState();
             session.wordSelectTimeout = setTimeout(tick, 1000);
         }
@@ -224,7 +223,6 @@ function selectWord(session, playerId, word, broadcastState) {
             endRound(session, broadcastState);
         }
         else {
-            saveSessionToRedis(session);
             broadcastState();
             session.drawingTimeout = setTimeout(tick, 1000);
         }
@@ -292,7 +290,6 @@ function endRound(session, broadcastState) {
             }
         }
         else {
-            saveSessionToRedis(session);
             broadcastState();
             session.resultsTimeout = setTimeout(tick, 1000);
         }
