@@ -1,0 +1,21 @@
+{
+  "name": "ai-chamber-escape-root",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "packages/shared",
+    "apps/server",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev --workspace=apps/server",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev": "concurrently \"npm run dev --workspace=apps/server\" \"npm run dev --workspace=apps/web\"",
+    "build": "npm run build --workspaces --if-present",
+    "start": "npm run start --workspace=apps/server",
+    "install:all": "npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

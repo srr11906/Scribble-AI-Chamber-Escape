@@ -1,0 +1,31 @@
+import { GamePhase, Player, ChamberConfig, ChamberState, StrokeSegment } from 'shared';
+export interface ChamberSession {
+    chamberId: string;
+    phase: GamePhase;
+    config: ChamberConfig;
+    players: Player[];
+    currentCycle: number;
+    drawerId: string | null;
+    wordOptions: string[];
+    chosenWord: string | null;
+    timer: number;
+    hints: string;
+    revealedIndices: number[];
+    canvasHistory: StrokeSegment[];
+    lastActiveTime: number;
+    drawerIndex: number;
+    wordSelectTimeout: NodeJS.Timeout | null;
+    drawingTimeout: NodeJS.Timeout | null;
+    resultsTimeout: NodeJS.Timeout | null;
+}
+export declare const activeSessions: Map<string, ChamberSession>;
+export declare function clearSessionTimers(session: ChamberSession): void;
+export declare function generateChamberId(): string;
+export declare function serializeSession(session: ChamberSession): ChamberState;
+export declare function saveSessionToRedis(session: ChamberSession): Promise<void>;
+export declare function createChamber(chamberId: string, hostSocketId: string, codename: string): ChamberSession;
+export declare function generateHints(word: string, revealedIndices: number[]): string;
+export declare function startWordSelection(session: ChamberSession, broadcastState: () => void): void;
+export declare function selectWord(session: ChamberSession, playerId: string, word: string, broadcastState: () => void): void;
+export declare function endRound(session: ChamberSession, broadcastState: () => void): void;
+export declare function handleGuessScore(session: ChamberSession, player: Player, broadcastState: () => void): number;

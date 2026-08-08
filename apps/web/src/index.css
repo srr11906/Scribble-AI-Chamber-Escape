@@ -1,0 +1,135 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-size: 17px;
+  }
+  @media (min-width: 1024px) {
+    html {
+      font-size: 18px;
+    }
+  }
+  body {
+    background-color: #05070B;
+    color: #EAFBFF;
+    font-family: 'Outfit', sans-serif;
+    overflow-x: hidden;
+  }
+  
+  h1, h2, h3, h4, h5, h6, .font-cyber {
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 0.05em;
+  }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Futuristic Scanline Overlay */
+.scanlines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.2) 50%
+  );
+  background-size: 100% 4px;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+.scanlines::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 0, 0, 0.02),
+    rgba(0, 255, 0, 0.01),
+    rgba(0, 0, 255, 0.02)
+  );
+  pointer-events: none;
+}
+
+/* CRT screen flicker */
+@keyframes crt-flicker {
+  0% { opacity: 0.995; }
+  50% { opacity: 0.985; }
+  100% { opacity: 0.995; }
+}
+
+.crt-effect {
+  animation: crt-flicker 0.15s infinite;
+}
+
+/* Hologram card effect */
+.hologram-panel {
+  background: rgba(11, 17, 23, 0.65);
+  border: 1px solid rgba(0, 245, 255, 0.2);
+  box-shadow: 0 0 15px rgba(0, 245, 255, 0.05), inset 0 0 15px rgba(0, 245, 255, 0.05);
+  backdrop-filter: blur(8px);
+  position: relative;
+}
+
+.hologram-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, rgba(0, 245, 255, 0.02) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Hexagon matrix background */
+.cyber-grid {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(rgba(0, 245, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 245, 255, 0.02) 1px, transparent 1px);
+}
+
+/* Scrollbar customization */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #05070B;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 245, 255, 0.2);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 245, 255, 0.5);
+}
+
+/* Neon text shadows */
+.glow-cyan {
+  text-shadow: 0 0 5px rgba(0, 245, 255, 0.6), 0 0 10px rgba(0, 245, 255, 0.3);
+}
+
+.glow-red {
+  text-shadow: 0 0 5px rgba(255, 46, 99, 0.6), 0 0 10px rgba(255, 46, 99, 0.3);
+}
+
+.glow-green {
+  text-shadow: 0 0 5px rgba(0, 255, 163, 0.6), 0 0 10px rgba(0, 255, 163, 0.3);
+}
