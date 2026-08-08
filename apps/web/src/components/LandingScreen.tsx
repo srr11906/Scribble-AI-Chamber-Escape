@@ -64,27 +64,29 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
       </header>
 
       {/* Main Core Section */}
-      <main className="flex-1 flex flex-col lg:flex-row items-center justify-center gap-12 max-w-4xl w-full mx-auto my-6 z-10">
+      <main className="flex-1 flex flex-col lg:flex-row items-center justify-center gap-4 lg:gap-12 max-w-4xl w-full mx-auto my-3 sm:my-6 z-10 min-h-0">
         {/* Core Column */}
-        <div className="flex flex-col items-center text-center">
-          <NeonCore />
-          <div className="mt-4">
-            <h1 className="text-3xl font-extrabold uppercase tracking-wider text-chamber-text glow-cyan">
+        <div className="flex flex-col items-center text-center shrink-0">
+          <div className="hidden sm:block">
+            <NeonCore />
+          </div>
+          <div className="mt-2 sm:mt-4">
+            <h1 className="text-xl sm:text-3xl font-cyber font-black uppercase tracking-wider text-chamber-text glow-cyan leading-none">
               AI CHAMBER ESCAPE
             </h1>
-            <p className="text-xs text-chamber-secondary uppercase tracking-widest mt-1">
-              MULTIPLAYER COOPERATIVE SOCIAL SURVIVAL
+            <p className="text-[8px] sm:text-xs text-chamber-secondary uppercase tracking-widest mt-1">
+              MULTIPLAYER SOCIAL SURVIVAL
             </p>
           </div>
-          <div className="mt-4 px-3 py-1 bg-chamber-red/10 border border-chamber-red/35 rounded text-[10px] text-chamber-red font-cyber tracking-widest animate-pulse">
+          <div className="mt-2 sm:mt-4 px-3 py-1 bg-chamber-red/10 border border-chamber-red/35 rounded text-[8px] sm:text-[10px] text-chamber-red font-cyber tracking-widest animate-pulse">
             WARNING: HUMAN SUBJECT DETECTED. DOORS LOCKED.
           </div>
         </div>
 
         {/* Panel Form Column */}
-        <div className="w-full max-w-sm hologram-panel rounded-xl border border-chamber-cyan/20 p-6 flex flex-col">
+        <div className="w-full max-w-sm hologram-panel rounded-xl border border-chamber-cyan/20 p-4 sm:p-6 flex flex-col shrink-0">
           {/* Tabs */}
-          <div className="grid grid-cols-2 gap-2 p-1 bg-chamber-bg border border-chamber-cyan/15 rounded-lg mb-6">
+          <div className="grid grid-cols-2 gap-2 p-1 bg-chamber-bg border border-chamber-cyan/15 rounded-lg mb-4 sm:mb-6">
             <button
               onClick={() => {
                 setActiveTab('create');
@@ -115,9 +117,9 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
 
           {/* Form */}
           {activeTab === 'create' ? (
-            <form onSubmit={handleCreate} className="space-y-4">
+            <form onSubmit={handleCreate} className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-[10px] text-chamber-secondary uppercase tracking-widest font-cyber mb-1">
+                <label className="block text-[8px] sm:text-[10px] text-chamber-secondary uppercase tracking-widest font-cyber mb-1">
                   Subject Nickname
                 </label>
                 <input
@@ -126,24 +128,24 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
                   value={codename}
                   onChange={(e) => setCodename(e.target.value)}
                   placeholder="E.g., Nickname"
-                  className="w-full bg-chamber-bg border border-chamber-cyan/20 hover:border-chamber-cyan/40 focus:border-chamber-cyan/70 focus:outline-none rounded-lg px-4 py-2.5 text-chamber-text font-mono text-sm tracking-wider placeholder:text-chamber-secondary/40"
+                  className="w-full bg-chamber-bg border border-chamber-cyan/20 hover:border-chamber-cyan/40 focus:border-chamber-cyan/70 focus:outline-none rounded-lg px-4 py-2 sm:py-2.5 text-chamber-text font-mono text-xs sm:text-sm tracking-wider placeholder:text-chamber-secondary/40"
                   required
                 />
               </div>
 
               {error && (
-                <div className="flex items-center gap-2 p-2 bg-chamber-red/10 border border-chamber-red/20 rounded text-xs text-chamber-red">
-                  <ShieldAlert size={14} className="shrink-0" />
+                <div className="flex items-center gap-2 p-2 bg-chamber-red/10 border border-chamber-red/20 rounded text-[10px] text-chamber-red">
+                  <ShieldAlert size={12} className="shrink-0" />
                   <span>{error}</span>
                 </div>
               )}
 
               <button
                 type="submit"
-                className="w-full py-3 bg-chamber-cyan hover:bg-chamber-cyan/85 text-chamber-bg font-cyber font-bold rounded-lg transition-all flex items-center justify-center gap-2 group shadow-cyan-glow cursor-pointer"
+                className="w-full py-2.5 sm:py-3 bg-chamber-cyan hover:bg-chamber-cyan/85 text-chamber-bg font-cyber font-bold rounded-lg transition-all flex items-center justify-center gap-2 group shadow-cyan-glow cursor-pointer text-xs"
               >
                 INITIALIZE CHAMBER
-                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
               </button>
             </form>
           ) : (

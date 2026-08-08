@@ -26,6 +26,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
   const isHost = me?.isHost || false;
 
   const [copied, setCopied] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'protocols' | 'subjects'>('subjects');
   const [customWordsText, setCustomWordsText] = useState(config.customWords.join(', '));
 
   const shareUrl = `${window.location.origin}/r/${chamberId}`;
@@ -66,21 +67,72 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
             Lobby State — Synchronizing Neural Interfaces
           </p>
         </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && (
+            <button
+              onClick={() => {
+                const doc = document.documentElement;
+                if (!document.fullscreenElement) {
+                  if (doc.requestFullscreen) doc.requestFullscreen();
+                  // @ts-ignore
+                  else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
+                } else {
+                  if (document.exitFullscreen) document.exitFullscreen();
+                }
+                audioSystem.playBeep();
+              }}
+              className="px-2 py-1 border border-chamber-cyan/20 hover:border-chamber-cyan text-chamber-cyan bg-chamber-cyan/5 rounded-lg text-[9px] font-cyber tracking-widest transition-all cursor-pointer"
+              title="Toggle Fullscreen"
+            >
+              FULLSCREEN
+            </button>
+          )}
+          <button
+            onClick={() => {
+              audioSystem.playBuzz();
+              onLeaveChamber();
+            }}
+            className="px-2.5 py-1 border border-chamber-red/25 hover:border-chamber-red text-chamber-red bg-chamber-red/10 rounded-lg text-[9px] font-cyber tracking-widest transition-all cursor-pointer"
+          >
+            DISCONNECT
+          </button>
+        </div>
+      </header>
+
+      {/* Mobile Tab Selector */}
+      <div className="grid grid-cols-2 gap-2 p-1 bg-chamber-bg border border-chamber-cyan/15 rounded-lg mb-3 lg:hidden shrink-0 w-full max-w-5xl mx-auto z-10">
         <button
           onClick={() => {
-            audioSystem.playBuzz();
-            onLeaveChamber();
+            setMobileTab('subjects');
+            audioSystem.playBeep();
           }}
-          className="px-2.5 py-1 border border-chamber-red/25 hover:border-chamber-red text-chamber-red bg-chamber-red/10 rounded-lg text-[9px] font-cyber tracking-widest transition-all cursor-pointer"
+          className={`py-1.5 rounded text-[10px] font-cyber tracking-wider uppercase transition-all ${
+            mobileTab === 'subjects'
+              ? 'bg-chamber-cyan/20 text-chamber-cyan border border-chamber-cyan/35'
+              : 'text-chamber-secondary hover:text-white'
+          }`}
         >
-          DISCONNECT
+          Subjects ({players.filter(p => !p.isSpectator).length})
         </button>
-      </header>
+        <button
+          onClick={() => {
+            setMobileTab('protocols');
+            audioSystem.playBeep();
+          }}
+          className={`py-1.5 rounded text-[10px] font-cyber tracking-wider uppercase transition-all ${
+            mobileTab === 'protocols'
+              ? 'bg-chamber-cyan/20 text-chamber-cyan border border-chamber-cyan/35'
+              : 'text-chamber-secondary hover:text-white'
+          }`}
+        >
+          Protocols
+        </button>
+      </div>
 
       {/* Main Grid */}
       <main className="flex-1 w-full max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-3 min-h-0 overflow-y-auto lg:overflow-hidden pr-0.5">
-        {/* Left Column: Configuration (2 Cols width on desktop if desired, but 1 Col is great) */}
-        <section className="lg:col-span-2 flex flex-col gap-4 min-h-0 lg:overflow-y-auto pr-0.5">
+        {/* Left Column: Configuration */}
+        <section className={`lg:col-span-2 flex flex-col gap-4 min-h-0 lg:overflow-y-auto pr-0.5 ${mobileTab === 'protocols' ? 'flex' : 'hidden lg:flex'}`}>
           {/* Share Box */}
           <div className="hologram-panel rounded-xl p-5 border border-chamber-cyan/20">
             <h3 className="text-xs text-chamber-secondary uppercase tracking-widest font-cyber mb-3">
@@ -223,7 +275,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
         </section>
 
         {/* Right Column: Player Roster */}
-        <section className="hologram-panel rounded-xl border border-chamber-cyan/20 p-4 flex flex-col justify-between min-h-0 overflow-hidden">
+        <section className={`hologram-panel rounded-xl border border-chamber-cyan/20 p-4 flex flex-col justify-between min-h-0 overflow-hidden ${mobileTab === 'subjects' ? 'flex' : 'hidden lg:flex'}`}>
           <div className="flex flex-col min-h-0 flex-1">
             <h3 className="text-xs text-chamber-secondary uppercase tracking-widest font-cyber border-b border-chamber-cyan/10 pb-2 mb-3 flex items-center gap-1.5 shrink-0">
               <Users size={14} className="text-chamber-cyan" />

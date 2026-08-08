@@ -5,6 +5,7 @@ import { LandingScreen } from './components/LandingScreen';
 import { LobbyScreen } from './components/LobbyScreen';
 import { GameScreen } from './components/GameScreen';
 import { audioSystem } from './components/AudioSystem';
+import { Eye } from 'lucide-react';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:4000';
 
@@ -21,6 +22,47 @@ export const App: React.FC = () => {
     return match ? match[1].toUpperCase() : '';
   });
   const [isConnected, setIsConnected] = useState(false);
+  
+  const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+
+  useEffect(() => {
+    const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    setIsMobileDevice(mobile);
+
+    if (mobile) {
+      const prompted = sessionStorage.getItem('fullscreen_prompted');
+      if (!prompted) {
+        setShowFullscreenPrompt(true);
+      }
+    }
+  }, []);
+
+  const handleEngageFullscreen = () => {
+    sessionStorage.setItem('fullscreen_prompted', 'true');
+    setShowFullscreenPrompt(false);
+    
+    const doc = document.documentElement;
+    try {
+      if (doc.requestFullscreen) doc.requestFullscreen();
+      // @ts-ignore
+      else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
+      // @ts-ignore
+      else if (doc.mozRequestFullScreen) doc.mozRequestFullScreen();
+      // @ts-ignore
+      else if (doc.msRequestFullscreen) doc.msRequestFullscreen();
+    } catch (e) {
+      console.warn("Fullscreen request denied or unsupported.");
+    }
+    
+    audioSystem.playOpen();
+  };
+
+  const handleDismissFullscreen = () => {
+    sessionStorage.setItem('fullscreen_prompted', 'true');
+    setShowFullscreenPrompt(false);
+    audioSystem.playBeep();
+  };
 
   // Initialize Socket.IO connection
   useEffect(() => {
@@ -167,6 +209,51 @@ export const App: React.FC = () => {
         </span>
       </div>
       {screenContent}
+
+      {/* Mobile Fullscreen holographic prompt modal */}
+      {showFullscreenPrompt && isMobileDevice && (
+        <div className="fixed inset-0 bg-chamber-bg/95 backdrop-blur-md z-[200] flex items-center justify-center p-6 select-none">
+          <div className="hologram-panel border border-chamber-cyan/30 rounded-xl p-5 w-full max-w-sm text-center flex flex-col items-center shadow-cyan-glow relative">
+            <div className="absolute top-2 left-2 font-mono text-[6px] text-chamber-cyan/50 tracking-widest uppercase">
+              SYS_UI_CALIBRATION
+            </div>
+            
+            <div className="w-10 h-10 rounded-full border border-chamber-cyan/20 flex items-center justify-center text-chamber-cyan bg-chamber-cyan/5 mb-3 animate-pulse">
+              <Eye className="w-5 h-5" />
+            </div>
+
+            <h3 className="text-xs font-cyber font-black tracking-widest text-chamber-cyan uppercase mb-1.5">
+              OPTIMIZE UPLINK DISPLAY
+            </h3>
+            
+            <p className="text-[8px] text-chamber-secondary uppercase tracking-wider leading-relaxed mb-4">
+              To stabilize neural interfaces and prevent layout cropping, engage fullscreen display.
+            </p>
+
+            {/* iOS specific tip */}
+            {/iPhone|iPod/i.test(navigator.userAgent) && (
+              <div className="border border-chamber-cyan/10 bg-chamber-surface/30 px-2.5 py-1.5 rounded text-[7px] text-chamber-secondary uppercase tracking-widest leading-normal mb-4 text-left">
+                💡 iOS DETECTED: For native fullscreen, tap browser <span className="text-chamber-cyan font-bold">Share</span> and select <span className="text-chamber-cyan font-bold">"Add to Home Screen"</span>.
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1.5 w-full">
+              <button
+                onClick={handleEngageFullscreen}
+                className="w-full py-2 bg-chamber-cyan text-chamber-bg font-cyber font-bold tracking-widest text-[10px] rounded-lg shadow-cyan-glow hover:bg-chamber-cyan/90 transition-all cursor-pointer"
+              >
+                ENGAGE FULLSCREEN
+              </button>
+              <button
+                onClick={handleDismissFullscreen}
+                className="w-full py-1.5 border border-chamber-cyan/25 text-chamber-secondary font-cyber tracking-widest text-[8px] rounded-lg hover:border-chamber-cyan/45 transition-all cursor-pointer"
+              >
+                SKIP CALIBRATION
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

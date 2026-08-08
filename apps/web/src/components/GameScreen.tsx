@@ -276,7 +276,26 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         </div>
 
         {/* Action controls */}
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0 z-10">
+          {/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && (
+            <button
+              onClick={() => {
+                const doc = document.documentElement;
+                if (!document.fullscreenElement) {
+                  if (doc.requestFullscreen) doc.requestFullscreen();
+                  // @ts-ignore
+                  else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
+                } else {
+                  if (document.exitFullscreen) document.exitFullscreen();
+                }
+                audioSystem.playBeep();
+              }}
+              className="p-1 border border-chamber-cyan/20 hover:border-chamber-cyan rounded text-chamber-cyan bg-chamber-bg/60 transition-colors text-[9px] font-cyber px-2"
+              title="Toggle Fullscreen"
+            >
+              FS
+            </button>
+          )}
           <button
             onClick={onToggleAudio}
             className="p-1 sm:p-1.5 border border-chamber-cyan/20 hover:border-chamber-cyan/50 rounded text-chamber-cyan bg-chamber-bg/60 transition-colors"
