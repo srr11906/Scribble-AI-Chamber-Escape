@@ -1,4 +1,4 @@
-import { GamePhase, Player, ChamberConfig, ChamberState, StrokeSegment, ChatMessage } from 'shared';
+import { GamePhase, Player, ChamberConfig, ChamberState, StrokeSegment, CompressedStroke, ChatMessage } from 'shared';
 import { getRandomWords } from './wordDb';
 import { setVal, getVal, delVal } from './redis';
 
@@ -14,7 +14,7 @@ export interface ChamberSession {
   timer: number;
   hints: string;
   revealedIndices: number[];
-  canvasHistory: StrokeSegment[];
+  canvasHistory: CompressedStroke[];
   lastActiveTime: number;
   drawerIndex: number; // Index in players array for current cycle
   wordSelectTimeout: NodeJS.Timeout | null;
@@ -161,7 +161,7 @@ export function startWordSelection(session: ChamberSession, broadcastState: () =
   });
 
   // Pick next drawer
-  const activePlayers = session.players.filter(p => p.isOnline);
+  const activePlayers = session.players.filter(p => p.isOnline && !p.isSpectator);
   if (activePlayers.length === 0) {
     session.phase = 'LOBBY';
     saveSessionToRedis(session);
@@ -170,9 +170,9 @@ export function startWordSelection(session: ChamberSession, broadcastState: () =
   }
 
   session.drawerIndex = (session.drawerIndex + 1) % session.players.length;
-  // Ensure we select an online player as drawer, skip offline ones
+  // Ensure we select an online player as drawer, skip offline ones and spectators
   let attempts = 0;
-  while (!session.players[session.drawerIndex].isOnline && attempts < session.players.length) {
+  while ((!session.players[session.drawerIndex].isOnline || session.players[session.drawerIndex].isSpectator) && attempts < session.players.length) {
     session.drawerIndex = (session.drawerIndex + 1) % session.players.length;
     attempts++;
   }
@@ -276,8 +276,8 @@ export function endRound(session: ChamberSession, broadcastState: () => void) {
   session.timer = 8; // 8 seconds display results
 
   // Calculate drawer scoring
-  const correctGuessers = session.players.filter(p => p.isVerified && p.id !== session.drawerId);
-  const guessersCount = session.players.filter(p => p.id !== session.drawerId && p.isOnline).length;
+  const correctGuessers = session.players.filter(p => p.isVerified && p.id !== session.drawerId && !p.isSpectator);
+  const guessersCount = session.players.filter(p => p.id !== session.drawerId && p.isOnline && !p.isSpectator).length;
   
   const drawer = session.players.find(p => p.id === session.drawerId);
   if (drawer && correctGuessers.length > 0) {
@@ -350,7 +350,7 @@ export function handleGuessScore(session: ChamberSession, player: Player, broadc
   player.lastVerifiedTime = session.timer;
   
   // If everyone online has now guessed, end the round early!
-  const unsolvedGuesser = session.players.find(p => p.isOnline && !p.isVerified && p.id !== session.drawerId);
+  const unsolvedGuesser = session.players.find(p => p.isOnline && !p.isVerified && p.id !== session.drawerId && !p.isSpectator);
   if (!unsolvedGuesser) {
     // Everyone solved, skip to results
     setTimeout(() => {

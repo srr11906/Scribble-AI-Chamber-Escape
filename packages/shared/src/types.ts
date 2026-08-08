@@ -10,6 +10,7 @@ export interface Player {
   lastVerifiedTime?: number; // Socket client's response timestamp
   isDrawer: boolean;
   disconnectTime: number | null; // Timestamp of disconnect, null if connected
+  isSpectator?: boolean; // True if player is a spectator
 }
 
 export interface ChamberConfig {
@@ -27,6 +28,13 @@ export interface Point {
 
 export interface StrokeSegment {
   points: Point[];
+  color: string;
+  size: number;
+  isEraser: boolean;
+}
+
+export interface CompressedStroke {
+  points: number[]; // Flat array of [x1, y1, x2, y2, ...]
   color: string;
   size: number;
   isEraser: boolean;
@@ -54,5 +62,5 @@ export interface ChamberState {
   chosenWord: string | null; // Null for guessers during drawing, shown for drawer and in results
   timer: number; // Seconds remaining (Oxygen)
   hints: string; // E.g., "_ _ a _ _"
-  canvasHistory: StrokeSegment[]; // Backlog of drawing for newly connected players
+  canvasHistory: CompressedStroke[]; // Backlog of drawing for newly connected players
 }

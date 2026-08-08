@@ -1,4 +1,4 @@
-import { GamePhase, Player, ChamberConfig, ChamberState, StrokeSegment } from 'shared';
+import { GamePhase, Player, ChamberConfig, ChamberState, CompressedStroke } from 'shared';
 export interface ChamberSession {
     chamberId: string;
     phase: GamePhase;
@@ -11,7 +11,7 @@ export interface ChamberSession {
     timer: number;
     hints: string;
     revealedIndices: number[];
-    canvasHistory: StrokeSegment[];
+    canvasHistory: CompressedStroke[];
     lastActiveTime: number;
     drawerIndex: number;
     wordSelectTimeout: NodeJS.Timeout | null;

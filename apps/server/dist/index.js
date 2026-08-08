@@ -8,6 +8,7 @@ const http_1 = require("http");
 const socket_io_1 = require("socket.io");
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const shared_1 = require("shared");
 const redis_1 = require("./redis");
 const game_1 = require("./game");
 dotenv_1.default.config();
@@ -30,7 +31,7 @@ function sendChamberStateToSocket(socket, session) {
     const player = session.players.find(p => p.id === socket.id);
     const playerState = { ...state };
     if (session.phase === 'DRAWING' && player) {
-        if (player.id === session.drawerId || player.isVerified) {
+        if (player.id === session.drawerId || player.isVerified || player.isSpectator) {
             playerState.chosenWord = session.chosenWord;
         }
         else {
@@ -52,7 +53,7 @@ function broadcastChamberState(session) {
         if (playerSocket) {
             const playerState = { ...state };
             if (session.phase === 'DRAWING') {
-                if (p.id === session.drawerId || p.isVerified) {
+                if (p.id === session.drawerId || p.isVerified || p.isSpectator) {
                     playerState.chosenWord = session.chosenWord;
                 }
                 else {
@@ -71,6 +72,8 @@ function broadcastChamberState(session) {
 }
 // Rate limit helper: socketId -> message timestamps
 const chatRateLimits = new Map();
+// Draw rate limit helper: socketId -> { lastTime: number, count: number }
+const drawRateLimits = new Map();
 // Profanity list placeholder
 const PROFANITY_REGEX = /bastard|fuck|shit|asshole|bitch|crap/gi;
 function sanitizeText(text) {
@@ -127,39 +130,65 @@ function updateTyping(chamberId) {
 io.on('connection', (socket) => {
     console.log(`Socket connected: ${socket.id}`);
     // Handle Chamber Creation
-    socket.on('createChamber', (codename) => {
+    socket.on('createChamber', (codename, callback) => {
         try {
+            const parsed = shared_1.CreateChamberSchema.safeParse({ codename });
+            if (!parsed.success) {
+                const errMsg = parsed.error.issues[0].message;
+                socket.emit('error', errMsg);
+                if (callback)
+                    callback({ success: false, error: errMsg });
+                return;
+            }
+            const validatedName = parsed.data.codename;
             const chamberId = (0, game_1.generateChamberId)();
-            const session = (0, game_1.createChamber)(chamberId, socket.id, codename.trim());
+            const session = (0, game_1.createChamber)(chamberId, socket.id, validatedName);
             socket.join(chamberId);
             socketSessions.set(socket.id, {
                 playerId: socket.id,
-                codename: codename.trim(),
+                codename: validatedName,
                 chamberId
             });
             sendChamberStateToSocket(socket, session);
-            pushSystemMessage(chamberId, `SUBJECT ${codename.toUpperCase()} INITIALIZED AS HOST.`);
+            pushSystemMessage(chamberId, `SUBJECT ${validatedName.toUpperCase()} INITIALIZED AS HOST.`);
             pushAIAnnouncement(chamberId, `NEW SECURE CHAMBER ${chamberId} ACTIVE.`);
+            if (callback)
+                callback({ success: true, data: (0, game_1.serializeSession)(session) });
         }
         catch (err) {
             socket.emit('error', 'Chamber creation failed.');
+            if (callback)
+                callback({ success: false, error: 'Chamber creation failed.' });
         }
     });
     // Handle Chamber Join / Rejoin
-    socket.on('joinChamber', (codename, chamberId) => {
-        const cleanChamberId = chamberId.toUpperCase().trim();
-        const session = game_1.activeSessions.get(cleanChamberId);
-        if (!session) {
-            socket.emit('error', 'CHAMBER OFFLINE OR DESTROYED.');
+    socket.on('joinChamber', (codename, chamberId, callback) => {
+        const parsed = shared_1.JoinChamberSchema.safeParse({ codename, chamberId });
+        if (!parsed.success) {
+            const errMsg = parsed.error.issues[0].message;
+            socket.emit('error', errMsg);
+            if (callback)
+                callback({ success: false, error: errMsg });
             return;
         }
-        const trimmedName = codename.trim();
+        const validatedName = parsed.data.codename;
+        const cleanChamberId = parsed.data.chamberId;
+        const session = game_1.activeSessions.get(cleanChamberId);
+        if (!session) {
+            const errMsg = 'CHAMBER OFFLINE OR DESTROYED.';
+            socket.emit('error', errMsg);
+            if (callback)
+                callback({ success: false, error: errMsg });
+            return;
+        }
         // Check if player is rejoining (based on codename match)
-        const existingPlayer = session.players.find(p => p.codename.toLowerCase() === trimmedName.toLowerCase());
+        const existingPlayer = session.players.find(p => p.codename.toLowerCase() === validatedName.toLowerCase());
         if (existingPlayer) {
             if (existingPlayer.isOnline) {
-                // Prevent duplicate online connections with same player ID/codename
-                socket.emit('error', 'IDENTITY DUPLICATION DETECTED. CHOOSE ANOTHER NICKNAME.');
+                const errMsg = 'IDENTITY DUPLICATION DETECTED. CHOOSE ANOTHER NICKNAME.';
+                socket.emit('error', errMsg);
+                if (callback)
+                    callback({ success: false, error: errMsg });
                 return;
             }
             // Reconnect Player
@@ -170,7 +199,7 @@ io.on('connection', (socket) => {
             // Transfer session index mapping
             socketSessions.set(socket.id, {
                 playerId: socket.id,
-                codename: trimmedName,
+                codename: validatedName,
                 chamberId: cleanChamberId
             });
             // Update drawer socket ID if they were drawing
@@ -179,59 +208,96 @@ io.on('connection', (socket) => {
             }
             socket.join(cleanChamberId);
             sendChamberStateToSocket(socket, session);
-            pushSystemMessage(cleanChamberId, `SUBJECT ${trimmedName.toUpperCase()} RE-ESTABLISHED UPLINK.`);
-            pushAIAnnouncement(cleanChamberId, `SUBJECT ${trimmedName.toUpperCase()} RECONNECTED.`);
+            pushSystemMessage(cleanChamberId, `SUBJECT ${validatedName.toUpperCase()} RE-ESTABLISHED UPLINK.`);
+            pushAIAnnouncement(cleanChamberId, `SUBJECT ${validatedName.toUpperCase()} RECONNECTED.`);
             (0, game_1.saveSessionToRedis)(session);
             broadcastChamberState(session);
+            if (callback)
+                callback({ success: true, data: (0, game_1.serializeSession)(session) });
             return;
         }
-        // New Player Join Check
-        if (session.players.length >= session.config.maxPlayers) {
-            socket.emit('error', 'CHAMBER CAPACITY MAXIMIZED.');
+        // Prevent duplicate join mapping from same socket ID
+        const alreadyConnected = session.players.some(p => p.id === socket.id);
+        if (alreadyConnected) {
+            const errMsg = 'IDENTITY DUPLICATION DETECTED.';
+            socket.emit('error', errMsg);
+            if (callback)
+                callback({ success: false, error: errMsg });
             return;
         }
+        // Spectator Mode Check
+        const activePlayersCount = session.players.filter(p => !p.isSpectator).length;
+        const isSpectator = activePlayersCount >= session.config.maxPlayers;
         const newPlayer = {
             id: socket.id,
-            codename: trimmedName,
+            codename: validatedName,
             score: 0,
             isHost: false,
             isOnline: true,
             isVerified: false,
             isDrawer: false,
             disconnectTime: null,
+            isSpectator
         };
         session.players.push(newPlayer);
         socketSessions.set(socket.id, {
             playerId: socket.id,
-            codename: trimmedName,
+            codename: validatedName,
             chamberId: cleanChamberId
         });
         socket.join(cleanChamberId);
-        pushSystemMessage(cleanChamberId, `SUBJECT ${trimmedName.toUpperCase()} INTEGRATED.`);
-        pushAIAnnouncement(cleanChamberId, `SUBJECT COUNT: ${session.players.length}.`);
+        if (isSpectator) {
+            pushSystemMessage(cleanChamberId, `SUBJECT ${validatedName.toUpperCase()} INTEGRATED AS SPECTATOR.`);
+            pushAIAnnouncement(cleanChamberId, `SPECTATOR MODE ENGAGED.`);
+        }
+        else {
+            pushSystemMessage(cleanChamberId, `SUBJECT ${validatedName.toUpperCase()} INTEGRATED.`);
+            pushAIAnnouncement(cleanChamberId, `SUBJECT COUNT: ${session.players.filter(p => !p.isSpectator).length}.`);
+        }
         (0, game_1.saveSessionToRedis)(session);
         broadcastChamberState(session);
+        if (callback)
+            callback({ success: true, data: (0, game_1.serializeSession)(session) });
     });
     // Host Configuration Update
-    socket.on('updateConfig', (config) => {
+    socket.on('updateConfig', (config, callback) => {
         const sessionDetails = socketSessions.get(socket.id);
-        if (!sessionDetails)
-            return;
-        const session = game_1.activeSessions.get(sessionDetails.chamberId);
-        if (!session)
-            return;
-        // Verify host
-        const player = session.players.find(p => p.id === socket.id);
-        if (!player || !player.isHost) {
-            socket.emit('error', 'HOST STATUS REQUIRED FOR PROTOCOL MUTATION.');
+        if (!sessionDetails) {
+            if (callback)
+                callback({ success: false, error: 'NO_SESSION' });
             return;
         }
-        // Validate config limits
-        session.config.maxPlayers = Math.max(3, Math.min(12, config.maxPlayers));
-        session.config.drawTime = Math.max(30, Math.min(120, config.drawTime));
-        session.config.cycles = Math.max(1, Math.min(10, config.cycles));
-        session.config.wordPack = config.wordPack;
-        session.config.customWords = config.customWords || [];
+        const session = game_1.activeSessions.get(sessionDetails.chamberId);
+        if (!session) {
+            if (callback)
+                callback({ success: false, error: 'NO_SESSION' });
+            return;
+        }
+        // Verify host
+        const player = session.players.find(p => p.id === socket.id);
+        if (!player || !player.isHost || player.isSpectator) {
+            const errMsg = 'HOST STATUS REQUIRED FOR PROTOCOL MUTATION.';
+            socket.emit('error', errMsg);
+            if (callback)
+                callback({ success: false, error: errMsg });
+            return;
+        }
+        // Zod validation
+        const parsed = shared_1.ConfigSchema.safeParse(config);
+        if (!parsed.success) {
+            const errMsg = parsed.error.issues[0].message;
+            socket.emit('error', errMsg);
+            if (callback)
+                callback({ success: false, error: errMsg });
+            return;
+        }
+        const validatedConfig = parsed.data;
+        // Apply config
+        session.config.maxPlayers = validatedConfig.maxPlayers;
+        session.config.drawTime = validatedConfig.drawTime;
+        session.config.cycles = validatedConfig.cycles;
+        session.config.wordPack = validatedConfig.wordPack;
+        session.config.customWords = validatedConfig.customWords;
         // Reset game state to LOBBY if coming from FINAL_RESULTS (game complete restart)
         if (session.phase === 'FINAL_RESULTS') {
             session.phase = 'LOBBY';
@@ -253,22 +319,37 @@ io.on('connection', (socket) => {
         (0, game_1.saveSessionToRedis)(session);
         broadcastChamberState(session);
         pushSystemMessage(sessionDetails.chamberId, `CHAMBER PROTOCOLS MUTATED BY HOST.`);
+        if (callback)
+            callback({ success: true });
     });
     // Start the Game
-    socket.on('startGame', () => {
+    socket.on('startGame', (callback) => {
         const sessionDetails = socketSessions.get(socket.id);
-        if (!sessionDetails)
-            return;
-        const session = game_1.activeSessions.get(sessionDetails.chamberId);
-        if (!session)
-            return;
-        const player = session.players.find(p => p.id === socket.id);
-        if (!player || !player.isHost) {
-            socket.emit('error', 'HOST STATUS REQUIRED.');
+        if (!sessionDetails) {
+            if (callback)
+                callback({ success: false, error: 'NO_SESSION' });
             return;
         }
-        if (session.players.length < 2) { // 3-12 suggested, allow 2 minimum for easy testing
-            socket.emit('error', 'MINIMUM 2 SUBJECTS REQUIRED FOR STABILITY.');
+        const session = game_1.activeSessions.get(sessionDetails.chamberId);
+        if (!session) {
+            if (callback)
+                callback({ success: false, error: 'NO_SESSION' });
+            return;
+        }
+        const player = session.players.find(p => p.id === socket.id);
+        if (!player || !player.isHost || player.isSpectator) {
+            const errMsg = 'HOST STATUS REQUIRED.';
+            socket.emit('error', errMsg);
+            if (callback)
+                callback({ success: false, error: errMsg });
+            return;
+        }
+        const activePlayersCount = session.players.filter(p => !p.isSpectator).length;
+        if (activePlayersCount < 2) { // 3-12 suggested, allow 2 minimum for easy testing
+            const errMsg = 'MINIMUM 2 ACTIVE SUBJECTS REQUIRED FOR STABILITY.';
+            socket.emit('error', errMsg);
+            if (callback)
+                callback({ success: false, error: errMsg });
             return;
         }
         session.currentCycle = 1;
@@ -280,79 +361,182 @@ io.on('connection', (socket) => {
         (0, game_1.startWordSelection)(session, () => {
             broadcastChamberState(session);
         });
+        if (callback)
+            callback({ success: true });
     });
     // Word selection by drawer
-    socket.on('selectWord', (word) => {
+    socket.on('selectWord', (word, callback) => {
         const sessionDetails = socketSessions.get(socket.id);
-        if (!sessionDetails)
-            return;
-        const session = game_1.activeSessions.get(sessionDetails.chamberId);
-        if (!session || session.phase !== 'WORD_SELECTION' || session.drawerId !== socket.id)
-            return;
-        // Validate option
-        if (!session.wordOptions.includes(word)) {
-            socket.emit('error', 'INVALID SECURITY CODE.');
+        if (!sessionDetails) {
+            if (callback)
+                callback({ success: false, error: 'NO_SESSION' });
             return;
         }
-        (0, game_1.selectWord)(session, socket.id, word, () => {
+        const session = game_1.activeSessions.get(sessionDetails.chamberId);
+        if (!session || session.phase !== 'WORD_SELECTION' || session.drawerId !== socket.id) {
+            if (callback)
+                callback({ success: false, error: 'NOT_DRAWER' });
+            return;
+        }
+        // Zod validation
+        const parsed = shared_1.SelectWordSchema.safeParse(word);
+        if (!parsed.success) {
+            const errMsg = parsed.error.issues[0].message;
+            socket.emit('error', errMsg);
+            if (callback)
+                callback({ success: false, error: errMsg });
+            return;
+        }
+        const validatedWord = parsed.data;
+        // Validate option
+        if (!session.wordOptions.includes(validatedWord)) {
+            const errMsg = 'INVALID SECURITY CODE.';
+            socket.emit('error', errMsg);
+            if (callback)
+                callback({ success: false, error: errMsg });
+            return;
+        }
+        (0, game_1.selectWord)(session, socket.id, validatedWord, () => {
             broadcastChamberState(session);
         });
         pushAIAnnouncement(sessionDetails.chamberId, `SURVIVAL CODE GENERATED. VENTILATING OXYGEN...`);
+        if (callback)
+            callback({ success: true });
     });
     // Batched Drawing strokes
-    socket.on('drawStroke', (stroke) => {
+    socket.on('drawStroke', (stroke, callback) => {
         const sessionDetails = socketSessions.get(socket.id);
-        if (!sessionDetails)
+        if (!sessionDetails) {
+            if (callback)
+                callback({ success: false, error: 'NO_SESSION' });
             return;
+        }
         const session = game_1.activeSessions.get(sessionDetails.chamberId);
-        if (!session || session.phase !== 'DRAWING' || session.drawerId !== socket.id)
+        if (!session || session.phase !== 'DRAWING' || session.drawerId !== socket.id) {
+            if (callback)
+                callback({ success: false, error: 'NOT_DRAWER' });
             return;
+        }
+        // Zod validation
+        const parsed = shared_1.StrokeSchema.safeParse(stroke);
+        if (!parsed.success) {
+            const errMsg = parsed.error.issues[0].message;
+            socket.emit('error', errMsg);
+            if (callback)
+                callback({ success: false, error: errMsg });
+            return;
+        }
+        // Rate Limit Check
+        const now = Date.now();
+        const limit = drawRateLimits.get(socket.id) || { lastTime: now, count: 0 };
+        if (now - limit.lastTime > 1000) {
+            limit.lastTime = now;
+            limit.count = 0;
+        }
+        limit.count++;
+        drawRateLimits.set(socket.id, limit);
+        if (limit.count > 45) {
+            socket.emit('error', 'RATE LIMIT EXCEEDED: DRAWING STROKES THROTTLED.');
+            if (callback)
+                callback({ success: false, error: 'Throttled' });
+            return;
+        }
+        const validatedStroke = parsed.data;
         // Anti-cheat: prevent oversized payloads
-        if (stroke.points.length > 500) {
-            socket.emit('error', 'STROKE BATCH EXCEEDS BANDWIDTH LIMITS.');
+        if (validatedStroke.points.length > 500) {
+            const errMsg = 'STROKE BATCH EXCEEDS BANDWIDTH LIMITS.';
+            socket.emit('error', errMsg);
+            if (callback)
+                callback({ success: false, error: errMsg });
             return;
         }
         // Save stroke and broadcast
-        session.canvasHistory.push(stroke);
-        socket.to(sessionDetails.chamberId).emit('drawStroke', stroke);
+        session.canvasHistory.push(validatedStroke);
+        socket.to(sessionDetails.chamberId).emit('drawStroke', validatedStroke);
+        if (callback)
+            callback({ success: true });
     });
-    socket.on('clearCanvas', () => {
+    socket.on('clearCanvas', (callback) => {
         const sessionDetails = socketSessions.get(socket.id);
-        if (!sessionDetails)
-            return;
-        const session = game_1.activeSessions.get(sessionDetails.chamberId);
-        if (!session || session.phase !== 'DRAWING' || session.drawerId !== socket.id)
-            return;
-        session.canvasHistory = [];
-        io.to(sessionDetails.chamberId).emit('clearCanvas');
-    });
-    socket.on('undoStroke', () => {
-        const sessionDetails = socketSessions.get(socket.id);
-        if (!sessionDetails)
-            return;
-        const session = game_1.activeSessions.get(sessionDetails.chamberId);
-        if (!session || session.phase !== 'DRAWING' || session.drawerId !== socket.id)
-            return;
-        session.canvasHistory.pop();
-        io.to(sessionDetails.chamberId).emit('undoStroke');
-    });
-    // Guess Chat Messages
-    socket.on('sendMessage', (text) => {
-        const sessionDetails = socketSessions.get(socket.id);
-        if (!sessionDetails || !text.trim())
-            return;
-        // Rate Limit Check
-        if (!checkRateLimit(socket.id)) {
-            socket.emit('error', 'AI CORE: MESSAGE TRANSMISSION THROTTLED (RATE LIMIT).');
+        if (!sessionDetails) {
+            if (callback)
+                callback({ success: false, error: 'NO_SESSION' });
             return;
         }
         const session = game_1.activeSessions.get(sessionDetails.chamberId);
-        if (!session)
+        if (!session || session.phase !== 'DRAWING' || session.drawerId !== socket.id) {
+            if (callback)
+                callback({ success: false, error: 'NOT_DRAWER' });
             return;
+        }
+        session.canvasHistory = [];
+        io.to(sessionDetails.chamberId).emit('clearCanvas');
+        if (callback)
+            callback({ success: true });
+    });
+    socket.on('undoStroke', (callback) => {
+        const sessionDetails = socketSessions.get(socket.id);
+        if (!sessionDetails) {
+            if (callback)
+                callback({ success: false, error: 'NO_SESSION' });
+            return;
+        }
+        const session = game_1.activeSessions.get(sessionDetails.chamberId);
+        if (!session || session.phase !== 'DRAWING' || session.drawerId !== socket.id) {
+            if (callback)
+                callback({ success: false, error: 'NOT_DRAWER' });
+            return;
+        }
+        session.canvasHistory.pop();
+        io.to(sessionDetails.chamberId).emit('undoStroke');
+        if (callback)
+            callback({ success: true });
+    });
+    // Guess Chat Messages
+    socket.on('sendMessage', (text, callback) => {
+        const sessionDetails = socketSessions.get(socket.id);
+        if (!sessionDetails) {
+            if (callback)
+                callback({ success: false, error: 'NO_SESSION' });
+            return;
+        }
+        // Rate Limit Check
+        if (!checkRateLimit(socket.id)) {
+            socket.emit('error', 'AI CORE: MESSAGE TRANSMISSION THROTTLED (RATE LIMIT).');
+            if (callback)
+                callback({ success: false, error: 'Throttled' });
+            return;
+        }
+        const session = game_1.activeSessions.get(sessionDetails.chamberId);
+        if (!session) {
+            if (callback)
+                callback({ success: false, error: 'NO_SESSION' });
+            return;
+        }
         const sender = session.players.find(p => p.id === socket.id);
-        if (!sender)
+        if (!sender) {
+            if (callback)
+                callback({ success: false, error: 'NO_PLAYER' });
             return;
-        const cleanText = sanitizeText(text.trim());
+        }
+        // Zod validation
+        const parsed = shared_1.SendMessageSchema.safeParse(text);
+        if (!parsed.success) {
+            const errMsg = parsed.error.issues[0].message;
+            socket.emit('error', errMsg);
+            if (callback)
+                callback({ success: false, error: errMsg });
+            return;
+        }
+        const validatedText = parsed.data;
+        // Sanitize input (strip simple HTML/script tags)
+        const cleanText = sanitizeText(validatedText)
+            .replace(/<[^>]*>?/gm, '');
+        if (!cleanText.trim()) {
+            if (callback)
+                callback({ success: false, error: 'Message cannot be empty' });
+            return;
+        }
         // Check if in Drawing phase and word matches
         if (session.phase === 'DRAWING') {
             const isDrawer = session.drawerId === socket.id;
@@ -360,10 +544,20 @@ io.on('connection', (socket) => {
             if (isMatch) {
                 if (isDrawer) {
                     socket.emit('error', 'SECURITY THREAT: DRAWER CANNOT REVEAL CODE.');
+                    if (callback)
+                        callback({ success: false, error: 'Drawer cannot guess' });
+                    return;
+                }
+                if (sender.isSpectator) {
+                    socket.emit('error', 'SPECTATORS CANNOT SUBMIT ESCAPE CODES.');
+                    if (callback)
+                        callback({ success: false, error: 'Spectators cannot guess' });
                     return;
                 }
                 if (sender.isVerified) {
                     socket.emit('error', 'IDENTITY ALREADY VERIFIED.');
+                    if (callback)
+                        callback({ success: false, error: 'Already verified' });
                     return;
                 }
                 // Correct Guess
@@ -379,6 +573,8 @@ io.on('connection', (socket) => {
                 }
                 (0, game_1.saveSessionToRedis)(session);
                 broadcastChamberState(session);
+                if (callback)
+                    callback({ success: true });
                 return;
             }
         }
@@ -401,10 +597,14 @@ io.on('connection', (socket) => {
                     io.to(p.id).emit('chatMessage', chatMsg);
                 }
             });
+            if (callback)
+                callback({ success: true });
             return;
         }
         // Normal message to all
         io.to(sessionDetails.chamberId).emit('chatMessage', chatMsg);
+        if (callback)
+            callback({ success: true });
     });
     // Typing indicator
     socket.on('setTyping', (isTyping) => {
@@ -508,6 +708,15 @@ io.on('connection', (socket) => {
             player.disconnectTime = Date.now();
             pushSystemMessage(chamberId, `SUBJECT ${codename.toUpperCase()} CONNECTION INTERRUPTED.`);
             pushAIAnnouncement(chamberId, `SUBJECT OFFLINE. RECONNECT TIMEOUT ENGAGED.`);
+            // Immediate Host Transfer
+            if (player.isHost) {
+                const nextHost = session.players.find(p => p.isOnline && p.id !== socket.id && !p.isSpectator);
+                if (nextHost) {
+                    player.isHost = false;
+                    nextHost.isHost = true;
+                    pushSystemMessage(chamberId, `SUBJECT ${nextHost.codename.toUpperCase()} ELEVATED TO HOST (PREVIOUS HOST CONNECTION INTERRUPTED).`);
+                }
+            }
             // Update typing indicator
             const states = typingStates.get(chamberId) || {};
             delete states[playerId];
@@ -535,6 +744,14 @@ io.on('connection', (socket) => {
                                 broadcastChamberState(currentSession);
                             });
                             return;
+                        }
+                    }
+                    // Double check host status if they got expunged
+                    if (checkPlayer.isHost) {
+                        const nextHost = currentSession.players.find(p => p.isOnline && !p.isSpectator);
+                        if (nextHost) {
+                            nextHost.isHost = true;
+                            pushSystemMessage(chamberId, `SUBJECT ${nextHost.codename.toUpperCase()} ELEVATED TO HOST.`);
                         }
                     }
                     (0, game_1.saveSessionToRedis)(currentSession);

@@ -1,8 +1,8 @@
-import { ChamberState, StrokeSegment, ChatMessage, ChamberConfig } from './types';
+import { ChamberState, StrokeSegment, CompressedStroke, ChatMessage, ChamberConfig } from './types';
 
 export interface ServerToClientEvents {
   chamberUpdated: (state: ChamberState) => void;
-  drawStroke: (stroke: StrokeSegment) => void;
+  drawStroke: (stroke: CompressedStroke) => void;
   clearCanvas: () => void;
   undoStroke: () => void;
   chatMessage: (msg: ChatMessage) => void;
@@ -13,15 +13,15 @@ export interface ServerToClientEvents {
 }
 
 export interface ClientToServerEvents {
-  createChamber: (codename: string) => void;
-  joinChamber: (codename: string, chamberId: string) => void;
-  updateConfig: (config: ChamberConfig) => void;
-  startGame: () => void;
-  selectWord: (word: string) => void;
-  drawStroke: (stroke: StrokeSegment) => void;
-  clearCanvas: () => void;
-  undoStroke: () => void;
-  sendMessage: (text: string) => void;
+  createChamber: (codename: string, callback?: (res: { success: boolean; data?: ChamberState; error?: string }) => void) => void;
+  joinChamber: (codename: string, chamberId: string, callback?: (res: { success: boolean; data?: ChamberState; error?: string }) => void) => void;
+  updateConfig: (config: ChamberConfig, callback?: (res: { success: boolean; error?: string }) => void) => void;
+  startGame: (callback?: (res: { success: boolean; error?: string }) => void) => void;
+  selectWord: (word: string, callback?: (res: { success: boolean; error?: string }) => void) => void;
+  drawStroke: (stroke: CompressedStroke, callback?: (res: { success: boolean; error?: string }) => void) => void;
+  clearCanvas: (callback?: (res: { success: boolean; error?: string }) => void) => void;
+  undoStroke: (callback?: (res: { success: boolean; error?: string }) => void) => void;
+  sendMessage: (text: string, callback?: (res: { success: boolean; error?: string }) => void) => void;
   setTyping: (isTyping: boolean) => void;
   kickPlayer: (playerId: string) => void;
   leaveChamber: () => void;

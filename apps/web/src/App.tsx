@@ -15,25 +15,33 @@ export const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [audioMuted, setAudioMuted] = useState(true);
 
-  const [sharedChamberId] = useState(() => {
+  const [sharedChamberId] = useState<string>(() => {
     const path = window.location.pathname;
     const match = path.match(/^\/r\/([A-Z0-9]{6})$/i);
     return match ? match[1].toUpperCase() : '';
   });
+  const [isConnected, setIsConnected] = useState(false);
 
   // Initialize Socket.IO connection
   useEffect(() => {
     const newSocket = io(SOCKET_URL, {
       autoConnect: true,
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 2000,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
     });
 
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
       console.log('Connected to AI Chamber security uplink.');
+      setIsConnected(true);
+      setError(null);
+    });
+
+    newSocket.on('connect_error', () => {
+      setIsConnected(false);
     });
 
     newSocket.on('chamberUpdated', (state: ChamberState) => {
@@ -48,6 +56,7 @@ export const App: React.FC = () => {
 
     newSocket.on('disconnect', () => {
       console.warn('Uplink interrupted. Attempting reconnection...');
+      setIsConnected(false);
     });
 
     return () => {
@@ -112,8 +121,9 @@ export const App: React.FC = () => {
   };
 
   // Determine what screen to render
+  let screenContent;
   if (!chamberState) {
-    return (
+    screenContent = (
       <LandingScreen
         initialChamberId={sharedChamberId}
         onCreateChamber={handleCreateChamber}
@@ -123,10 +133,8 @@ export const App: React.FC = () => {
         onToggleAudio={handleToggleAudio}
       />
     );
-  }
-
-  if (chamberState.phase === 'LOBBY') {
-    return (
+  } else if (chamberState.phase === 'LOBBY') {
+    screenContent = (
       <LobbyScreen
         state={chamberState}
         myId={socket?.id || ''}
@@ -136,18 +144,30 @@ export const App: React.FC = () => {
         onLeaveChamber={handleLeaveChamber}
       />
     );
+  } else {
+    screenContent = (
+      <GameScreen
+        state={chamberState}
+        myId={socket?.id || ''}
+        socket={socket}
+        audioMuted={audioMuted}
+        onToggleAudio={handleToggleAudio}
+        onLeaveChamber={handleLeaveChamber}
+      />
+    );
   }
 
-  // Active game phases (WORD_SELECTION, DRAWING, ROUND_RESULTS, FINAL_RESULTS)
   return (
-    <GameScreen
-      state={chamberState}
-      myId={socket?.id || ''}
-      socket={socket}
-      audioMuted={audioMuted}
-      onToggleAudio={handleToggleAudio}
-      onLeaveChamber={handleLeaveChamber}
-    />
+    <div className="relative w-full h-[100dvh] min-h-0 overflow-hidden bg-chamber-bg">
+      {/* Global connection status indicator */}
+      <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-[60] bg-chamber-surface/60 backdrop-blur-sm px-2 py-1 rounded border border-chamber-cyan/10 pointer-events-none select-none">
+        <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-chamber-cyan animate-pulse shadow-cyan-glow' : 'bg-chamber-red animate-ping shadow-red-glow'}`} />
+        <span className="font-mono text-[7px] text-chamber-secondary uppercase tracking-widest font-cyber">
+          {isConnected ? 'UPLINK STABLE' : 'UPLINK INTERRUPTED'}
+        </span>
+      </div>
+      {screenContent}
+    </div>
   );
 };
 

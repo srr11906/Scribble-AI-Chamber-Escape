@@ -227,7 +227,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
           <div>
             <h3 className="text-xs text-chamber-secondary uppercase tracking-widest font-cyber border-b border-chamber-cyan/10 pb-2 mb-4 flex items-center gap-1.5">
               <Users size={14} className="text-chamber-cyan" />
-              Chamber Subjects ({players.length} / {config.maxPlayers})
+              Chamber Subjects ({players.filter(p => !p.isSpectator).length} / {config.maxPlayers})
             </h3>
 
             <div className="space-y-2 max-h-[300px] lg:max-h-none overflow-y-auto pr-1">
@@ -242,8 +242,13 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                       {player.codename}
                     </span>
                     {player.isHost && (
-                      <span className="px-1.5 py-0.5 border border-chamber-cyan/30 text-chamber-cyan text-[7px] font-cyber tracking-widest bg-chamber-cyan/10 rounded">
+                      <span className="px-1.5 py-0.5 border border-chamber-cyan/30 text-chamber-cyan text-[7px] font-cyber tracking-widest bg-chamber-cyan/10 rounded animate-pulse">
                         HOST
+                      </span>
+                    )}
+                    {player.isSpectator && (
+                      <span className="px-1.5 py-0.5 border border-chamber-secondary/30 text-chamber-secondary text-[7px] font-cyber tracking-widest bg-chamber-surface rounded">
+                        SPECTATOR
                       </span>
                     )}
                   </div>
@@ -273,7 +278,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                   audioSystem.playLock();
                   onStartGame();
                 }}
-                disabled={players.length < 2}
+                disabled={players.filter(p => !p.isSpectator).length < 2}
                 className="w-full py-3 bg-chamber-cyan hover:bg-chamber-cyan/85 text-chamber-bg font-cyber font-bold rounded-lg tracking-widest transition-all flex items-center justify-center gap-2 shadow-cyan-glow disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
               >
                 <Play size={16} />
