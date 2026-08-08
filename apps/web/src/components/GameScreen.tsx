@@ -312,7 +312,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         </aside>
 
         {/* CENTER COLUMN: Drawing Canvas & Phase States */}
-        <main className="h-[50vh] md:h-auto flex-1 flex flex-col p-2 md:p-6 items-center justify-center relative overflow-y-auto min-h-0 w-full">
+        <main className="h-[52vh] md:h-auto flex-1 flex flex-col p-2 md:p-6 items-center justify-center relative overflow-hidden min-h-0 w-full">
           <div className="w-full max-w-[720px] flex-1 flex flex-col justify-center min-h-0">
             
             {/* WORD SELECTION PHASE */}
@@ -457,28 +457,28 @@ export const GameScreen: React.FC<GameScreenProps> = ({
 
             {/* ROUND RESULTS PHASE */}
             {phase === 'ROUND_RESULTS' && (
-              <div className="w-full flex flex-col items-center justify-center p-6 bg-chamber-surface/40 border border-chamber-cyan/20 rounded-xl hologram-panel animate-crt-flicker">
-                <div className="w-12 h-12 rounded-full border-2 border-chamber-green/40 flex items-center justify-center text-chamber-green bg-chamber-green/10 mb-4 animate-pulse">
-                  <CheckCircle size={24} className="shadow-green-glow" />
+              <div className="w-full flex flex-col items-center justify-center p-3 md:p-6 bg-chamber-surface/40 border border-chamber-cyan/20 rounded-xl hologram-panel animate-crt-flicker min-h-0">
+                <div className="w-8 h-8 md:w-12 md:h-12 rounded-full border border-chamber-green/40 flex items-center justify-center text-chamber-green bg-chamber-green/10 mb-2 md:mb-4 animate-pulse shrink-0">
+                  <CheckCircle size={18} className="shadow-green-glow" />
                 </div>
                 
-                <h3 className="text-sm font-cyber text-chamber-secondary uppercase tracking-widest mb-1">
+                <h3 className="text-[10px] md:text-sm font-cyber text-chamber-secondary uppercase tracking-widest mb-0.5 shrink-0">
                   SECURITY CODE RESOLVED
                 </h3>
-                <h2 className="text-2xl font-cyber font-bold text-chamber-green glow-green uppercase tracking-widest mb-6">
+                <h2 className="text-lg md:text-2xl font-cyber font-bold text-chamber-green glow-green uppercase tracking-widest mb-3 md:mb-6 shrink-0">
                   {chosenWord}
                 </h2>
 
-                <div className="w-full max-w-md bg-chamber-bg/60 border border-chamber-cyan/10 rounded-lg p-4 space-y-3">
-                  <h4 className="text-[10px] text-chamber-secondary uppercase tracking-widest border-b border-chamber-cyan/10 pb-1.5 font-cyber">
+                <div className="w-full max-w-md bg-chamber-bg/60 border border-chamber-cyan/10 rounded-lg p-2.5 md:p-4 space-y-1.5 md:space-y-3 overflow-y-auto max-h-[140px] md:max-h-none min-h-0">
+                  <h4 className="text-[8px] md:text-[10px] text-chamber-secondary uppercase tracking-widest border-b border-chamber-cyan/10 pb-1.5 font-cyber shrink-0">
                     Oxygen points allocation
                   </h4>
-                  <div className="space-y-2">
+                  <div className="space-y-1 md:space-y-2">
                     {players.map(p => {
                       const isCorrect = p.isVerified && p.id !== drawerId;
                       const isD = p.id === drawerId;
                       return (
-                        <div key={p.id} className="flex justify-between items-center text-xs font-mono">
+                        <div key={p.id} className="flex justify-between items-center text-[10px] md:text-xs font-mono">
                           <span className={`uppercase font-cyber ${isD ? 'text-chamber-red' : isCorrect ? 'text-chamber-green' : 'text-zinc-500'}`}>
                             {p.codename} {isD ? '(DRAWER)' : isCorrect ? '(VERIFIED)' : '(CONTAINED)'}
                           </span>
@@ -491,28 +491,28 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                   </div>
                 </div>
 
-                <div className="mt-8 flex flex-col items-center">
-                  <span className="text-[8px] text-chamber-secondary font-cyber tracking-widest uppercase">VENTILATING CHAMBER IN</span>
-                  <span className="text-lg font-mono text-chamber-cyan glow-cyan mt-0.5">{timer}s</span>
+                <div className="mt-3 md:mt-8 flex flex-col items-center shrink-0">
+                  <span className="text-[7px] md:text-[8px] text-chamber-secondary font-cyber tracking-widest uppercase">VENTILATING CHAMBER IN</span>
+                  <span className="text-sm md:text-lg font-mono text-chamber-cyan glow-cyan mt-0.5">{timer}s</span>
                 </div>
               </div>
             )}
 
             {/* FINAL RESULTS PHASE (ESCAPE SEQUENCES) */}
             {phase === 'FINAL_RESULTS' && (
-              <div className="w-full flex flex-col items-center justify-center p-6 bg-chamber-surface/50 border border-chamber-red/20 rounded-xl hologram-panel animate-crt-flicker relative overflow-hidden">
+              <div className="w-full flex flex-col items-center justify-center p-3 md:p-6 bg-chamber-surface/50 border border-chamber-red/20 rounded-xl hologram-panel animate-crt-flicker relative overflow-hidden min-h-0">
                 {/* Alarm Light indicator */}
                 <div className="absolute top-0 left-0 w-full h-1 bg-chamber-red animate-pulse" />
                 
-                <h2 className="text-xl md:text-2xl font-cyber font-black text-chamber-red glow-red tracking-widest uppercase mb-2 animate-pulse">
+                <h2 className="text-base md:text-2xl font-cyber font-black text-chamber-red glow-red tracking-widest uppercase mb-1 animate-pulse shrink-0">
                   ESCAPE PROTOCOL COMPLETE
                 </h2>
-                <p className="text-[9px] text-chamber-secondary uppercase tracking-widest mb-8 text-center max-w-sm">
-                  System analysis concluded. Chamber seals opening for Escape Candidates. Unverified subjects remain contained.
+                <p className="text-[8px] md:text-[9px] text-chamber-secondary uppercase tracking-widest mb-3 md:mb-8 text-center max-w-sm shrink-0">
+                  Escape candidates selected. Unverified subjects remain contained.
                 </p>
 
                 {/* Rankings revealed one by one */}
-                <div className="w-full max-w-md space-y-3 mb-8">
+                <div className="w-full max-w-md space-y-1.5 md:space-y-3 mb-3 md:mb-8 overflow-y-auto max-h-[160px] md:max-h-none min-h-0">
                   {sortedPlayers.map((player, idx) => {
                     const rank = idx + 1;
                     const isRevealed = (players.length - revealedRanksCount) <= idx;
@@ -522,37 +522,37 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                       <div
                         key={player.id}
                         style={{ opacity: isRevealed ? 1 : 0, transition: 'all 0.5s ease' }}
-                        className={`flex items-center justify-between p-3.5 border rounded-lg transition-all ${
+                        className={`flex items-center justify-between p-2 md:p-3.5 border rounded-lg transition-all ${
                           escaped
                             ? 'bg-chamber-green/10 border-chamber-green/30 shadow-green-glow'
                             : 'bg-chamber-red/5 border-chamber-red/25 opacity-70'
                         }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <span className={`font-mono text-sm font-bold ${escaped ? 'text-chamber-green' : 'text-chamber-red'}`}>
+                        <div className="flex items-center gap-2 md:gap-3">
+                          <span className={`font-mono text-xs md:text-sm font-bold ${escaped ? 'text-chamber-green' : 'text-chamber-red'}`}>
                             #{rank}
                           </span>
                           <div className="flex flex-col">
-                            <span className="text-sm font-cyber uppercase font-bold text-chamber-text">
+                            <span className="text-xs md:text-sm font-cyber uppercase font-bold text-chamber-text leading-none mb-0.5">
                               {player.codename}
                             </span>
-                            <span className={`text-[8px] font-cyber tracking-widest uppercase ${escaped ? 'text-chamber-green' : 'text-chamber-red'}`}>
+                            <span className={`text-[7px] md:text-[8px] font-cyber tracking-widest uppercase ${escaped ? 'text-chamber-green' : 'text-chamber-red'}`}>
                               {escaped ? 'ESCAPE CANDIDATE' : 'CONTAINED'}
                             </span>
                           </div>
                         </div>
 
                         {/* Rewards / Badges */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 md:gap-3">
                           <div className="text-right">
-                            <span className="font-mono text-xs text-chamber-cyan block">{player.score} PTS</span>
+                            <span className="font-mono text-[10px] md:text-xs text-chamber-cyan block">{player.score} PTS</span>
                           </div>
 
                           {isRevealed && escaped && (
-                            <div className="flex items-center justify-center p-1 bg-chamber-green/20 border border-chamber-green/40 rounded text-chamber-green" title={rank === 1 ? 'Platinum Shield' : rank === 2 ? 'Energy Mask' : 'Access Card'}>
-                              {rank === 1 && <Shield size={16} className="animate-bounce" />}
-                              {rank === 2 && <Zap size={16} className="animate-pulse" />}
-                              {rank === 3 && <Key size={16} />}
+                            <div className="flex items-center justify-center p-0.5 md:p-1 bg-chamber-green/20 border border-chamber-green/40 rounded text-chamber-green" title={rank === 1 ? 'Platinum Shield' : rank === 2 ? 'Energy Mask' : 'Access Card'}>
+                              {rank === 1 && <Shield size={12} className="animate-bounce" />}
+                              {rank === 2 && <Zap size={12} className="animate-pulse" />}
+                              {rank === 3 && <Key size={12} />}
                             </div>
                           )}
                         </div>
@@ -570,12 +570,12 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                         audioSystem.playOpen();
                       }
                     }}
-                    className="px-6 py-2.5 bg-chamber-cyan hover:bg-chamber-cyan/80 text-chamber-bg font-cyber font-bold rounded-lg tracking-widest text-xs shadow-cyan-glow transition-all cursor-pointer"
+                    className="px-4 py-2 md:px-6 md:py-2.5 bg-chamber-cyan hover:bg-chamber-cyan/80 text-chamber-bg font-cyber font-bold rounded-lg tracking-widest text-[10px] md:text-xs shadow-cyan-glow transition-all cursor-pointer shrink-0"
                   >
                     RESET SECURITY LOOP
                   </button>
                 ) : (
-                  <div className="text-xs text-chamber-secondary font-cyber uppercase tracking-widest animate-pulse">
+                  <div className="text-[9px] md:text-xs text-chamber-secondary font-cyber uppercase tracking-widest animate-pulse shrink-0">
                     AWAITING HOST PROTOCOL RESET...
                   </div>
                 )}
