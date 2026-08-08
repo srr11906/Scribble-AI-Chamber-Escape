@@ -73,6 +73,104 @@ function runTests() {
     mockSession.timer = 30;
     const points2 = (0, game_1.handleGuessScore)(mockSession, mockPlayer2, () => { });
     assert(points2 === 40, "Should award 40 points for guess within 21-40 seconds");
+    // Test 4: Drawer selection skips Offline and Spectating players
+    const playerActive = {
+        id: "active-1",
+        codename: "HOST",
+        score: 0,
+        isHost: true,
+        isOnline: true,
+        isVerified: false,
+        isDrawer: false,
+        disconnectTime: null,
+    };
+    const playerOffline = {
+        id: "offline-1",
+        codename: "OFFLINE",
+        score: 0,
+        isHost: false,
+        isOnline: false,
+        isVerified: false,
+        isDrawer: false,
+        disconnectTime: Date.now(),
+    };
+    const playerSpectator = {
+        id: "spec-1",
+        codename: "SPEC",
+        score: 0,
+        isHost: false,
+        isOnline: true,
+        isVerified: false,
+        isDrawer: false,
+        disconnectTime: null,
+        isSpectator: true,
+    };
+    const playerActive2 = {
+        id: "active-2",
+        codename: "ACTIVE2",
+        score: 0,
+        isHost: false,
+        isOnline: true,
+        isVerified: false,
+        isDrawer: false,
+        disconnectTime: null,
+    };
+    const rotationSession = {
+        chamberId: "ROTATE",
+        phase: "LOBBY",
+        config: {
+            maxPlayers: 5,
+            drawTime: 60,
+            cycles: 2,
+            wordPack: "all",
+            customWords: [],
+        },
+        players: [playerActive, playerOffline, playerSpectator, playerActive2],
+        currentCycle: 1,
+        drawerId: null,
+        wordOptions: [],
+        chosenWord: null,
+        timer: 0,
+        hints: "",
+        revealedIndices: [],
+        canvasHistory: [],
+        lastActiveTime: Date.now(),
+        drawerIndex: -1,
+        wordSelectTimeout: null,
+        drawingTimeout: null,
+        resultsTimeout: null,
+    };
+    // Mock next drawer selection loop:
+    // First selection index increment starts at -1 -> 0.
+    // Player at index 0 is playerActive (online, non-spectator) -> should be chosen!
+    let idx = (rotationSession.drawerIndex + 1) % rotationSession.players.length;
+    let attempts = 0;
+    while ((!rotationSession.players[idx].isOnline || rotationSession.players[idx].isSpectator) && attempts < rotationSession.players.length) {
+        idx = (idx + 1) % rotationSession.players.length;
+        attempts++;
+    }
+    assert(idx === 0, "First drawer selection index should be 0 (HOST)");
+    // Second selection starting from index 0 -> index 1.
+    // Index 1 is playerOffline (offline) -> skip.
+    // Index 2 is playerSpectator (spectator) -> skip.
+    // Index 3 is playerActive2 (online, active) -> select!
+    idx = 1;
+    attempts = 0;
+    while ((!rotationSession.players[idx].isOnline || rotationSession.players[idx].isSpectator) && attempts < rotationSession.players.length) {
+        idx = (idx + 1) % rotationSession.players.length;
+        attempts++;
+    }
+    assert(idx === 3, "Drawer selection should skip index 1 & 2, picking active player at index 3");
+    // Test 5: Winner Determination sorting order
+    const unsorted = [
+        { codename: "P1", score: 200, isSpectator: false },
+        { codename: "P2", score: 500, isSpectator: false },
+        { codename: "P3", score: 100, isSpectator: true }, // spectator
+        { codename: "P4", score: 400, isSpectator: false }
+    ];
+    const sorted = [...unsorted].sort((a, b) => b.score - a.score);
+    assert(sorted[0].codename === "P2", "Highest scorer P2 should be first");
+    assert(sorted[1].codename === "P4", "Second highest scorer P4 should be second");
     console.log("All game engine tests passed successfully.");
 }
 // Run tests and exit

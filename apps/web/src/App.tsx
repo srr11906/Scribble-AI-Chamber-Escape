@@ -160,9 +160,9 @@ export const App: React.FC = () => {
   return (
     <div className="relative w-full h-[100dvh] min-h-0 overflow-hidden bg-chamber-bg">
       {/* Global connection status indicator */}
-      <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-[60] bg-chamber-surface/60 backdrop-blur-sm px-2 py-1 rounded border border-chamber-cyan/10 pointer-events-none select-none">
-        <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-chamber-cyan animate-pulse shadow-cyan-glow' : 'bg-chamber-red animate-ping shadow-red-glow'}`} />
-        <span className="font-mono text-[7px] text-chamber-secondary uppercase tracking-widest font-cyber">
+      <div className="absolute top-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-[60] bg-chamber-surface/60 backdrop-blur-sm px-2 py-0.5 rounded border border-chamber-cyan/10 pointer-events-none select-none">
+        <span className={`w-1.2 h-1.2 rounded-full ${isConnected ? 'bg-chamber-cyan animate-pulse shadow-cyan-glow' : 'bg-chamber-red animate-ping shadow-red-glow'}`} />
+        <span className="font-mono text-[6px] text-chamber-secondary uppercase tracking-widest font-cyber">
           {isConnected ? 'UPLINK STABLE' : 'UPLINK INTERRUPTED'}
         </span>
       </div>

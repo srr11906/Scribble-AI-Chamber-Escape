@@ -53,16 +53,16 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
   };
 
   return (
-    <div className="min-h-screen w-full bg-chamber-bg cyber-grid p-4 md:p-8 select-none flex flex-col justify-between">
+    <div className="h-[100dvh] w-full bg-chamber-bg cyber-grid p-3 md:p-6 select-none flex flex-col justify-between overflow-hidden relative">
       <div className="scanlines" />
 
       {/* Header */}
-      <header className="w-full max-w-5xl mx-auto flex justify-between items-center border-b border-chamber-cyan/15 pb-4 mb-6">
+      <header className="w-full max-w-5xl mx-auto flex justify-between items-center border-b border-chamber-cyan/15 pb-2 mb-3 shrink-0">
         <div>
-          <h2 className="text-xl font-cyber font-extrabold tracking-wider text-chamber-cyan animate-pulse">
+          <h2 className="text-lg font-cyber font-extrabold tracking-wider text-chamber-cyan animate-pulse">
             CHAMBER {chamberId}
           </h2>
-          <p className="text-[10px] text-chamber-secondary uppercase tracking-widest mt-0.5">
+          <p className="text-[8px] text-chamber-secondary uppercase tracking-widest mt-0.5">
             Lobby State — Synchronizing Neural Interfaces
           </p>
         </div>
@@ -71,16 +71,16 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
             audioSystem.playBuzz();
             onLeaveChamber();
           }}
-          className="px-3 py-1.5 border border-chamber-red/25 hover:border-chamber-red text-chamber-red bg-chamber-red/10 rounded-lg text-xs font-cyber tracking-widest transition-all cursor-pointer"
+          className="px-2.5 py-1 border border-chamber-red/25 hover:border-chamber-red text-chamber-red bg-chamber-red/10 rounded-lg text-[9px] font-cyber tracking-widest transition-all cursor-pointer"
         >
           DISCONNECT
         </button>
       </header>
 
       {/* Main Grid */}
-      <main className="flex-1 w-full max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <main className="flex-1 w-full max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-3 min-h-0 overflow-y-auto lg:overflow-hidden pr-0.5">
         {/* Left Column: Configuration (2 Cols width on desktop if desired, but 1 Col is great) */}
-        <section className="lg:col-span-2 flex flex-col gap-6">
+        <section className="lg:col-span-2 flex flex-col gap-4 min-h-0 lg:overflow-y-auto pr-0.5">
           {/* Share Box */}
           <div className="hologram-panel rounded-xl p-5 border border-chamber-cyan/20">
             <h3 className="text-xs text-chamber-secondary uppercase tracking-widest font-cyber mb-3">
@@ -223,14 +223,14 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
         </section>
 
         {/* Right Column: Player Roster */}
-        <section className="hologram-panel rounded-xl border border-chamber-cyan/20 p-5 flex flex-col justify-between">
-          <div>
-            <h3 className="text-xs text-chamber-secondary uppercase tracking-widest font-cyber border-b border-chamber-cyan/10 pb-2 mb-4 flex items-center gap-1.5">
+        <section className="hologram-panel rounded-xl border border-chamber-cyan/20 p-4 flex flex-col justify-between min-h-0 overflow-hidden">
+          <div className="flex flex-col min-h-0 flex-1">
+            <h3 className="text-xs text-chamber-secondary uppercase tracking-widest font-cyber border-b border-chamber-cyan/10 pb-2 mb-3 flex items-center gap-1.5 shrink-0">
               <Users size={14} className="text-chamber-cyan" />
               Chamber Subjects ({players.filter(p => !p.isSpectator).length} / {config.maxPlayers})
             </h3>
 
-            <div className="space-y-2 max-h-[300px] lg:max-h-none overflow-y-auto pr-1">
+            <div className="space-y-2 flex-1 overflow-y-auto pr-1 min-h-[120px]">
               {players.map(player => (
                 <div
                   key={player.id}

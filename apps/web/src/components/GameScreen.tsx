@@ -357,7 +357,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         </aside>
 
         {/* CENTER COLUMN: Drawing Canvas & Phase States */}
-        <main className="h-[52vh] md:h-auto flex-1 flex flex-col p-2 md:p-6 items-center justify-center relative overflow-hidden min-h-0 w-full">
+        <main className="flex-[65] md:flex-1 flex flex-col p-2 md:p-6 items-center justify-center relative overflow-hidden min-h-0 w-full">
           <div className="w-full max-w-[720px] flex-1 flex flex-col justify-center min-h-0">
             
             {/* WORD SELECTION PHASE */}
@@ -635,7 +635,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         </main>
 
         {/* MOBILE BOTTOM DASHBOARD: Rankings & Chat (Mobile split-screen) */}
-        <div className="flex md:hidden h-[calc(50vh-50px)] border-t border-chamber-cyan/15 bg-chamber-surface/20 order-2 overflow-hidden shrink-0 min-h-0 w-full">
+        <div className="flex md:hidden flex-[35] border-t border-chamber-cyan/15 bg-chamber-surface/20 order-2 overflow-hidden shrink-0 min-h-0 w-full">
           {/* Left Side: Rankings */}
           <div className="w-[38%] border-r border-chamber-cyan/15 p-1.5 flex flex-col overflow-y-auto gap-1">
             {sortedPlayers.map((player, idx) => (
