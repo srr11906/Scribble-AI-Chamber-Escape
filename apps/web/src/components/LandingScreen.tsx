@@ -124,6 +124,11 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
                 </label>
                 <input
                   type="text"
+                  name="codename"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   maxLength={12}
                   value={codename}
                   onChange={(e) => setCodename(e.target.value)}
@@ -156,6 +161,11 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
                 </label>
                 <input
                   type="text"
+                  name="codename"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   maxLength={12}
                   value={codename}
                   onChange={(e) => setCodename(e.target.value)}
@@ -171,6 +181,11 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
                 </label>
                 <input
                   type="text"
+                  name="chamber-id"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   maxLength={6}
                   value={chamberId}
                   onChange={(e) => setChamberId(e.target.value.toUpperCase())}

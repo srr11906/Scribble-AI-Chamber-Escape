@@ -67,6 +67,7 @@ export const App: React.FC = () => {
   // Initialize Socket.IO connection
   useEffect(() => {
     const newSocket = io(SOCKET_URL, {
+      transports: ['websocket'],
       autoConnect: true,
       reconnection: true,
       reconnectionAttempts: Infinity,

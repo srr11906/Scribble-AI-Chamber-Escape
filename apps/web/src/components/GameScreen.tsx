@@ -754,6 +754,11 @@ export const GameScreen: React.FC<GameScreenProps> = ({
               <input
                 disabled={isDrawer || (phase === 'DRAWING' && me?.isVerified)}
                 type="text"
+                name="chat-guess-input"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
                 maxLength={40}
                 value={chatInput}
                 onChange={handleChatInputChange}
@@ -852,6 +857,11 @@ export const GameScreen: React.FC<GameScreenProps> = ({
               <input
                 disabled={isDrawer || (phase === 'DRAWING' && me?.isVerified)}
                 type="text"
+                name="mobile-chat-guess-input"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
                 maxLength={40}
                 value={chatInput}
                 onChange={handleChatInputChange}
