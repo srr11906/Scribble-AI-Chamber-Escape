@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Socket } from 'socket.io-client';
-import { ChamberState, Player, ChatMessage, StrokeSegment } from 'shared';
+import { ChamberState, Player, ChatMessage, CompressedStroke } from 'shared';
 import { DrawingCanvas } from './DrawingCanvas';
 import { 
   Trophy, MessageSquare, Send, Bell, Shield, Zap, Key, 
   Volume2, VolumeX, CheckCircle, ChevronUp, AlertCircle,
-  Eye, EyeOff
+  Eye, EyeOff, Copy
 } from 'lucide-react';
 import { audioSystem } from './AudioSystem';
 import confetti from 'canvas-confetti';
@@ -39,6 +39,34 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   const [isTyping, setIsTyping] = useState(false);
   const [revealedRanksCount, setRevealedRanksCount] = useState(0);
   const [showWordToDrawer, setShowWordToDrawer] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  // Lock keyboard adjustments for mobile viewports
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const handleViewportChange = () => {
+      const height = vv.height;
+      document.documentElement.style.setProperty('--viewport-height', `${height}px`);
+    };
+
+    vv.addEventListener('resize', handleViewportChange);
+    vv.addEventListener('scroll', handleViewportChange);
+    handleViewportChange();
+
+    return () => {
+      vv.removeEventListener('resize', handleViewportChange);
+      vv.removeEventListener('scroll', handleViewportChange);
+    };
+  }, []);
+
+  const handleCopyChamberCode = () => {
+    navigator.clipboard.writeText(`${window.location.origin}/r/${chamberId}`);
+    setCopied(true);
+    audioSystem.playBeep();
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const mobileChatEndRef = useRef<HTMLDivElement>(null);
@@ -195,20 +223,32 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   const strokeDashoffset = 113 - (113 * timerPercent) / 100;
 
   return (
-    <div className="h-[100dvh] w-full bg-chamber-bg cyber-grid flex flex-col justify-between overflow-hidden select-none">
+    <div 
+      className="w-full bg-chamber-bg cyber-grid flex flex-col justify-between overflow-hidden select-none relative"
+      style={{ height: 'var(--viewport-height, 100dvh)' }}
+    >
       <div className="scanlines animate-scanline" />
 
       {/* 1. Header Bar */}
       <header className="px-3 py-2 border-b border-chamber-cyan/15 bg-chamber-surface/65 backdrop-blur-md flex justify-between items-center z-30 gap-2">
-        <div className="flex items-center gap-1.5 md:gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 md:gap-3 shrink-0 relative">
           <div>
             <h2 className="text-xs md:text-sm font-cyber font-extrabold text-chamber-cyan tracking-wider">
               <span className="hidden sm:inline">CHAMBER </span>CYCLE {state.currentCycle} / {state.config.cycles}
             </h2>
-            <span className="text-[8px] text-chamber-secondary font-cyber tracking-widest uppercase hidden md:block mt-0.5">
-              SECTOR IDENT: {chamberId}
+            <span 
+              onClick={handleCopyChamberCode}
+              className="text-[8px] text-chamber-secondary hover:text-chamber-cyan font-cyber tracking-widest uppercase flex items-center gap-1 mt-0.5 cursor-pointer transition-colors"
+              title="Copy Chamber URL"
+            >
+              SECTOR IDENT: {chamberId} <Copy size={8} />
             </span>
           </div>
+          {copied && (
+            <span className="absolute left-0 -bottom-5 bg-chamber-cyan/20 border border-chamber-cyan text-chamber-cyan text-[7px] px-1 py-0.5 rounded font-cyber tracking-widest animate-pulse z-50">
+              COPIED CHAMBER LINK
+            </span>
+          )}
         </div>
 
         {/* Word hint / Selection header */}
@@ -276,7 +316,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                   p.id === myId
                     ? 'bg-chamber-cyan/10 border-chamber-cyan/40 shadow-cyan-glow'
                     : 'bg-chamber-bg/60 border-chamber-cyan/5'
-                }`}
+                } ${p.isSpectator ? 'opacity-60' : ''}`}
               >
                 {p.isVerified && (
                   <div className="absolute -top-1 -right-1 bg-chamber-green text-chamber-bg rounded-full p-0.5 shadow-green-glow z-10">
@@ -285,7 +325,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                 )}
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="font-mono text-xs text-chamber-secondary w-4">
-                    #{idx + 1}
+                    {p.isSpectator ? '-' : `#${idx + 1}`}
                   </span>
                   <div className="flex flex-col min-w-0">
                     <span className={`text-xs font-cyber uppercase truncate ${p.id === myId ? 'text-chamber-cyan font-bold' : 'text-chamber-text'}`}>
@@ -296,14 +336,19 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                         TRANSMITTING DRAWING
                       </span>
                     )}
+                    {p.isSpectator && (
+                      <span className="text-[7px] text-chamber-secondary font-cyber tracking-widest uppercase">
+                        SPECTATOR
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="text-right">
                   <span className="font-mono text-xs text-chamber-cyan glow-cyan">
-                    {p.score}
+                    {p.isSpectator ? 'OBS' : p.score}
                   </span>
                   <span className="text-[7px] text-chamber-secondary block font-cyber tracking-widest">
-                    O2 PTS
+                    {p.isSpectator ? 'WATCHING' : 'O2 PTS'}
                   </span>
                 </div>
               </div>
@@ -479,11 +524,11 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                       const isD = p.id === drawerId;
                       return (
                         <div key={p.id} className="flex justify-between items-center text-[10px] md:text-xs font-mono">
-                          <span className={`uppercase font-cyber ${isD ? 'text-chamber-red' : isCorrect ? 'text-chamber-green' : 'text-zinc-500'}`}>
-                            {p.codename} {isD ? '(DRAWER)' : isCorrect ? '(VERIFIED)' : '(CONTAINED)'}
+                          <span className={`uppercase font-cyber ${p.isSpectator ? 'text-zinc-600' : isD ? 'text-chamber-red' : isCorrect ? 'text-chamber-green' : 'text-zinc-500'}`}>
+                            {p.codename} {p.isSpectator ? '(SPECTATOR)' : isD ? '(DRAWER)' : isCorrect ? '(VERIFIED)' : '(CONTAINED)'}
                           </span>
-                          <span className={`font-mono ${isD || isCorrect ? 'text-chamber-cyan' : 'text-zinc-500'}`}>
-                            {p.score} PTS
+                          <span className={`font-mono ${p.isSpectator ? 'text-zinc-600' : isD || isCorrect ? 'text-chamber-cyan' : 'text-zinc-500'}`}>
+                            {p.isSpectator ? 'OBS' : `${p.score} PTS`}
                           </span>
                         </div>
                       );
@@ -516,28 +561,30 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                   {sortedPlayers.map((player, idx) => {
                     const rank = idx + 1;
                     const isRevealed = (players.length - revealedRanksCount) <= idx;
-                    const escaped = rank <= 3;
+                    const escaped = rank <= 3 && !player.isSpectator;
 
                     return (
                       <div
                         key={player.id}
                         style={{ opacity: isRevealed ? 1 : 0, transition: 'all 0.5s ease' }}
                         className={`flex items-center justify-between p-2 md:p-3.5 border rounded-lg transition-all ${
-                          escaped
-                            ? 'bg-chamber-green/10 border-chamber-green/30 shadow-green-glow'
-                            : 'bg-chamber-red/5 border-chamber-red/25 opacity-70'
+                          player.isSpectator
+                            ? 'bg-chamber-surface/40 border-chamber-secondary/20 opacity-60'
+                            : escaped
+                              ? 'bg-chamber-green/10 border-chamber-green/30 shadow-green-glow'
+                              : 'bg-chamber-red/5 border-chamber-red/25 opacity-70'
                         }`}
                       >
                         <div className="flex items-center gap-2 md:gap-3">
-                          <span className={`font-mono text-xs md:text-sm font-bold ${escaped ? 'text-chamber-green' : 'text-chamber-red'}`}>
-                            #{rank}
+                          <span className={`font-mono text-xs md:text-sm font-bold ${player.isSpectator ? 'text-chamber-secondary' : escaped ? 'text-chamber-green' : 'text-chamber-red'}`}>
+                            {player.isSpectator ? '-' : `#${rank}`}
                           </span>
                           <div className="flex flex-col">
                             <span className="text-xs md:text-sm font-cyber uppercase font-bold text-chamber-text leading-none mb-0.5">
                               {player.codename}
                             </span>
-                            <span className={`text-[7px] md:text-[8px] font-cyber tracking-widest uppercase ${escaped ? 'text-chamber-green' : 'text-chamber-red'}`}>
-                              {escaped ? 'ESCAPE CANDIDATE' : 'CONTAINED'}
+                            <span className={`text-[7px] md:text-[8px] font-cyber tracking-widest uppercase ${player.isSpectator ? 'text-chamber-secondary' : escaped ? 'text-chamber-green' : 'text-chamber-red'}`}>
+                              {player.isSpectator ? 'SPECTATOR' : escaped ? 'ESCAPE CANDIDATE' : 'CONTAINED'}
                             </span>
                           </div>
                         </div>
@@ -545,7 +592,9 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                         {/* Rewards / Badges */}
                         <div className="flex items-center gap-2 md:gap-3">
                           <div className="text-right">
-                            <span className="font-mono text-[10px] md:text-xs text-chamber-cyan block">{player.score} PTS</span>
+                            <span className="font-mono text-[10px] md:text-xs text-chamber-cyan block">
+                              {player.isSpectator ? 'OBSERVING' : `${player.score} PTS`}
+                            </span>
                           </div>
 
                           {isRevealed && escaped && (
@@ -596,7 +645,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                   player.id === myId
                     ? 'bg-chamber-cyan/10 border-chamber-cyan/40 shadow-cyan-glow'
                     : 'bg-chamber-bg/60 border-chamber-cyan/5'
-                }`}
+                } ${player.isSpectator ? 'opacity-65' : ''}`}
               >
                 {player.isVerified && (
                   <div className="absolute -top-0.5 -right-0.5 bg-chamber-green text-chamber-bg rounded-full p-0.5 shadow-green-glow z-10">
@@ -605,7 +654,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                 )}
                 <div className="flex items-center gap-1 min-w-0">
                   <span className="font-mono text-[9px] text-chamber-secondary">
-                    #{idx + 1}
+                    {player.isSpectator ? '-' : `#${idx + 1}`}
                   </span>
                   <div className="flex flex-col min-w-0">
                     <span className={`text-[9px] font-cyber uppercase truncate ${player.id === myId ? 'text-chamber-cyan font-bold' : 'text-chamber-text'}`}>
@@ -616,11 +665,16 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                         DRAWING
                       </span>
                     )}
+                    {player.isSpectator && (
+                      <span className="text-[6px] text-chamber-secondary font-cyber tracking-widest uppercase leading-none">
+                        SPECTATOR
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className="font-mono text-[9px] text-chamber-cyan font-bold block leading-none">
-                    {player.score}
+                  <span className="font-mono text-[9px] text-chamber-cyan font-bold block leading-none font-cyber">
+                    {player.isSpectator ? 'OBS' : player.score}
                   </span>
                 </div>
               </div>
@@ -684,7 +738,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                 maxLength={40}
                 value={chatInput}
                 onChange={handleChatInputChange}
-                placeholder={isDrawer ? "DRAWER CANNOT GUESS" : me?.isVerified ? "VERIFIED" : "GUESS..."}
+                placeholder={isDrawer ? "DRAWER CANNOT GUESS" : me?.isVerified ? "VERIFIED" : me?.isSpectator ? "CHAT (SPECTATOR)..." : "GUESS..."}
                 className="flex-1 bg-chamber-bg border border-chamber-cyan/20 focus:border-chamber-cyan/50 focus:outline-none rounded px-2 py-1 text-[10px] font-mono text-chamber-text placeholder:text-chamber-secondary/30 disabled:opacity-40"
               />
               <button
@@ -782,7 +836,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                 maxLength={40}
                 value={chatInput}
                 onChange={handleChatInputChange}
-                placeholder={isDrawer ? "DRAWER CANNOT GUESS" : me?.isVerified ? "IDENTITY VERIFIED" : "ENTER GUESS CODE..."}
+                placeholder={isDrawer ? "DRAWER CANNOT GUESS" : me?.isVerified ? "IDENTITY VERIFIED" : me?.isSpectator ? "CHAT (SPECTATOR)..." : "ENTER GUESS CODE..."}
                 className="flex-1 bg-chamber-bg border border-chamber-cyan/20 focus:border-chamber-cyan/70 focus:outline-none rounded-lg px-3 py-2 text-xs font-mono text-chamber-text placeholder:text-chamber-secondary/35 disabled:opacity-40"
               />
               <button
