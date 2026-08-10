@@ -10,6 +10,36 @@ export interface ServerToClientEvents {
     aiEvent: (announcement: string) => void;
     error: (msg: string) => void;
     playAudio: (soundName: 'hum' | 'beep' | 'chime' | 'buzz' | 'lock' | 'open') => void;
+    'voice:peer-joined': (payload: {
+        peerId: string;
+        micEnabled: boolean;
+        speakerEnabled: boolean;
+    }) => void;
+    'voice:offer': (payload: {
+        senderId: string;
+        sdp: any;
+    }) => void;
+    'voice:answer': (payload: {
+        senderId: string;
+        sdp: any;
+    }) => void;
+    'voice:ice-candidate': (payload: {
+        senderId: string;
+        candidate: any;
+    }) => void;
+    'voice:peer-left': (payload: {
+        peerId: string;
+    }) => void;
+    'voice:peer-state': (payload: {
+        peerId: string;
+        micEnabled: boolean;
+        speakerEnabled: boolean;
+        voiceConnected?: boolean;
+    }) => void;
+    'voice:peer-speaking': (payload: {
+        peerId: string;
+        speaking: boolean;
+    }) => void;
 }
 export interface ClientToServerEvents {
     createChamber: (codename: string, callback?: (res: {
@@ -53,4 +83,25 @@ export interface ClientToServerEvents {
     setTyping: (isTyping: boolean) => void;
     kickPlayer: (playerId: string) => void;
     leaveChamber: () => void;
+    'voice:join': () => void;
+    'voice:offer': (payload: {
+        targetId: string;
+        sdp: any;
+    }) => void;
+    'voice:answer': (payload: {
+        targetId: string;
+        sdp: any;
+    }) => void;
+    'voice:ice-candidate': (payload: {
+        targetId: string;
+        candidate: any;
+    }) => void;
+    'voice:leave': () => void;
+    'voice:state': (payload: {
+        micEnabled: boolean;
+        speakerEnabled: boolean;
+    }) => void;
+    'voice:speaking': (payload: {
+        speaking: boolean;
+    }) => void;
 }

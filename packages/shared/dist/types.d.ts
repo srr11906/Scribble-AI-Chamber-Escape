@@ -10,6 +10,10 @@ export interface Player {
     isDrawer: boolean;
     disconnectTime: number | null;
     isSpectator?: boolean;
+    micEnabled?: boolean;
+    speakerEnabled?: boolean;
+    voiceConnected?: boolean;
+    speaking?: boolean;
 }
 export interface ChamberConfig {
     maxPlayers: number;

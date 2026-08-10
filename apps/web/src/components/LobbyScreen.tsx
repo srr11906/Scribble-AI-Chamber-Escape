@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Player, ChamberState, ChamberConfig } from 'shared';
 import { WORD_CATEGORIES } from 'shared';
-import { Users, Timer, RefreshCw, Layers, Copy, Trash2, Shield, Play } from 'lucide-react';
+import { Users, Timer, RefreshCw, Layers, Copy, Trash2, Shield, Play, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { audioSystem } from './AudioSystem';
+import { useVoice } from '../voice/VoiceContext';
 
 interface LobbyScreenProps {
   state: ChamberState;
@@ -24,6 +25,8 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
   const { chamberId, config, players } = state;
   const me = players.find(p => p.id === myId);
   const isHost = me?.isHost || false;
+
+  const { micEnabled, speakerEnabled, toggleMic, toggleSpeaker } = useVoice();
 
   const [copied, setCopied] = useState(false);
   const [mobileTab, setMobileTab] = useState<'protocols' | 'subjects'>('subjects');
@@ -68,7 +71,34 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
           </p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          {/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && (
+          {/* Voice Controls */}
+          <button
+            onClick={toggleMic}
+            className={`px-2 py-1 border rounded-lg text-[9px] font-cyber tracking-widest transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+              micEnabled
+                ? 'border-chamber-cyan text-chamber-cyan bg-chamber-cyan/10 shadow-cyan-glow'
+                : 'border-chamber-secondary/30 text-chamber-secondary/50 hover:border-chamber-secondary bg-chamber-surface/20'
+            }`}
+            title="Toggle Microphone"
+          >
+            {micEnabled ? <Mic size={10} /> : <MicOff size={10} />}
+            <span>MIC: {micEnabled ? 'ON' : 'OFF'}</span>
+          </button>
+          
+          <button
+            onClick={toggleSpeaker}
+            className={`px-2 py-1 border rounded-lg text-[9px] font-cyber tracking-widest transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+              speakerEnabled
+                ? 'border-chamber-cyan text-chamber-cyan bg-chamber-cyan/10 shadow-cyan-glow'
+                : 'border-chamber-red/40 text-chamber-red bg-chamber-red/10 shadow-red-glow'
+            }`}
+            title="Toggle Voice Speaker"
+          >
+            {speakerEnabled ? <Volume2 size={10} /> : <VolumeX size={10} />}
+            <span>VOICE: {speakerEnabled ? 'ACTIVE' : 'MUTED'}</span>
+          </button>
+
+          {(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) && (
             <button
               onClick={() => {
                 const doc = document.documentElement;
@@ -286,13 +316,35 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
               {players.map(player => (
                 <div
                   key={player.id}
-                  className="flex items-center justify-between p-2.5 bg-chamber-bg border border-chamber-cyan/10 rounded-lg"
+                  className={`flex items-center justify-between p-2.5 bg-chamber-bg border rounded-lg transition-all ${
+                    player.speaking
+                      ? 'border-chamber-cyan shadow-cyan-glow bg-chamber-cyan/5 scale-[1.01]'
+                      : 'border-chamber-cyan/10'
+                  }`}
                 >
                   <div className="flex items-center gap-2">
                     <div className={`w-1.5 h-1.5 rounded-full ${player.isOnline ? 'bg-chamber-green shadow-green-glow animate-pulse' : 'bg-zinc-600'}`} />
                     <span className={`text-sm font-cyber uppercase ${player.id === myId ? 'text-chamber-cyan font-bold' : 'text-chamber-text'}`}>
                       {player.codename}
                     </span>
+                    {player.voiceConnected && (
+                      <span className="flex items-center gap-1 ml-1 text-chamber-secondary">
+                        {player.speaking ? (
+                          <span className="flex items-center gap-[1.5px] px-1 bg-chamber-cyan/10 border border-chamber-cyan/20 rounded h-4 shrink-0">
+                            <span className="w-[1.5px] h-1.5 bg-chamber-cyan rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                            <span className="w-[1.5px] h-2.5 bg-chamber-cyan rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                            <span className="w-[1.5px] h-1.5 bg-chamber-cyan rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+                          </span>
+                        ) : player.micEnabled ? (
+                          <Mic size={10} className="text-chamber-cyan/80 animate-pulse" />
+                        ) : (
+                          <MicOff size={10} className="text-chamber-secondary/40" />
+                        )}
+                        {!player.speakerEnabled && (
+                          <VolumeX size={10} className="text-chamber-red/70 animate-pulse" />
+                        )}
+                      </span>
+                    )}
                     {player.isHost && (
                       <span className="px-1.5 py-0.5 border border-chamber-cyan/30 text-chamber-cyan text-[7px] font-cyber tracking-widest bg-chamber-cyan/10 rounded animate-pulse">
                         HOST

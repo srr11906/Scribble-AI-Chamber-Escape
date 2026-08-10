@@ -11,6 +11,10 @@ export interface Player {
   isDrawer: boolean;
   disconnectTime: number | null; // Timestamp of disconnect, null if connected
   isSpectator?: boolean; // True if player is a spectator
+  micEnabled?: boolean;
+  speakerEnabled?: boolean;
+  voiceConnected?: boolean;
+  speaking?: boolean;
 }
 
 export interface ChamberConfig {

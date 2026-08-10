@@ -83,6 +83,19 @@ function broadcastChamberState(session) {
 const chatRateLimits = new Map();
 // Draw rate limit helper: socketId -> { lastTime: number, count: number }
 const drawRateLimits = new Map();
+// Voice signaling rate limit helper: socketId -> timestamps
+const voiceSignalingRateLimits = new Map();
+function checkVoiceRateLimit(socketId) {
+    const now = Date.now();
+    let timestamps = voiceSignalingRateLimits.get(socketId) || [];
+    timestamps = timestamps.filter(t => now - t < 5000);
+    if (timestamps.length >= 60) {
+        return false;
+    }
+    timestamps.push(now);
+    voiceSignalingRateLimits.set(socketId, timestamps);
+    return true;
+}
 // Profanity list placeholder
 const PROFANITY_REGEX = /bastard|fuck|shit|asshole|bitch|crap/gi;
 function sanitizeText(text) {
@@ -719,6 +732,155 @@ io.on('connection', (socket) => {
             broadcastChamberState(session);
         }
     });
+    // ==========================================
+    // REAL-TIME VOICE COMMUNICATION SIGNALING
+    // ==========================================
+    socket.on('voice:join', () => {
+        const sessionDetails = socketSessions.get(socket.id);
+        if (!sessionDetails)
+            return;
+        const session = game_1.activeSessions.get(sessionDetails.chamberId);
+        if (!session)
+            return;
+        const player = session.players.find(p => p.id === socket.id);
+        if (!player)
+            return;
+        player.voiceConnected = true;
+        player.micEnabled = player.micEnabled ?? false;
+        player.speakerEnabled = player.speakerEnabled ?? true;
+        player.speaking = false;
+        // Broadcast to others in the chamber
+        socket.to(sessionDetails.chamberId).emit('voice:peer-joined', {
+            peerId: socket.id,
+            micEnabled: player.micEnabled,
+            speakerEnabled: player.speakerEnabled
+        });
+        (0, game_1.saveSessionToRedis)(session);
+        broadcastChamberState(session);
+    });
+    socket.on('voice:offer', (payload) => {
+        const parsed = shared_1.VoiceOfferSchema.safeParse(payload);
+        if (!parsed.success)
+            return;
+        if (!checkVoiceRateLimit(socket.id))
+            return;
+        const { targetId, sdp } = parsed.data;
+        const sessionDetails = socketSessions.get(socket.id);
+        const targetDetails = socketSessions.get(targetId);
+        if (!sessionDetails || !targetDetails)
+            return;
+        if (sessionDetails.chamberId !== targetDetails.chamberId) {
+            console.warn(`Unauthorized voice offer attempt across chambers from ${socket.id} to ${targetId}`);
+            return;
+        }
+        io.to(targetId).emit('voice:offer', {
+            senderId: socket.id,
+            sdp
+        });
+    });
+    socket.on('voice:answer', (payload) => {
+        const parsed = shared_1.VoiceAnswerSchema.safeParse(payload);
+        if (!parsed.success)
+            return;
+        if (!checkVoiceRateLimit(socket.id))
+            return;
+        const { targetId, sdp } = parsed.data;
+        const sessionDetails = socketSessions.get(socket.id);
+        const targetDetails = socketSessions.get(targetId);
+        if (!sessionDetails || !targetDetails)
+            return;
+        if (sessionDetails.chamberId !== targetDetails.chamberId) {
+            console.warn(`Unauthorized voice answer attempt across chambers from ${socket.id} to ${targetId}`);
+            return;
+        }
+        io.to(targetId).emit('voice:answer', {
+            senderId: socket.id,
+            sdp
+        });
+    });
+    socket.on('voice:ice-candidate', (payload) => {
+        const parsed = shared_1.VoiceIceCandidateSchema.safeParse(payload);
+        if (!parsed.success)
+            return;
+        if (!checkVoiceRateLimit(socket.id))
+            return;
+        const { targetId, candidate } = parsed.data;
+        const sessionDetails = socketSessions.get(socket.id);
+        const targetDetails = socketSessions.get(targetId);
+        if (!sessionDetails || !targetDetails)
+            return;
+        if (sessionDetails.chamberId !== targetDetails.chamberId) {
+            console.warn(`Unauthorized voice ICE candidate attempt across chambers from ${socket.id} to ${targetId}`);
+            return;
+        }
+        io.to(targetId).emit('voice:ice-candidate', {
+            senderId: socket.id,
+            candidate
+        });
+    });
+    socket.on('voice:leave', () => {
+        const sessionDetails = socketSessions.get(socket.id);
+        if (!sessionDetails)
+            return;
+        const session = game_1.activeSessions.get(sessionDetails.chamberId);
+        if (!session)
+            return;
+        const player = session.players.find(p => p.id === socket.id);
+        if (player) {
+            player.voiceConnected = false;
+            player.speaking = false;
+        }
+        socket.to(sessionDetails.chamberId).emit('voice:peer-left', {
+            peerId: socket.id
+        });
+        (0, game_1.saveSessionToRedis)(session);
+        broadcastChamberState(session);
+    });
+    socket.on('voice:state', (payload) => {
+        const parsed = shared_1.VoiceStateSchema.safeParse(payload);
+        if (!parsed.success)
+            return;
+        const { micEnabled, speakerEnabled } = parsed.data;
+        const sessionDetails = socketSessions.get(socket.id);
+        if (!sessionDetails)
+            return;
+        const session = game_1.activeSessions.get(sessionDetails.chamberId);
+        if (!session)
+            return;
+        const player = session.players.find(p => p.id === socket.id);
+        if (player) {
+            player.micEnabled = micEnabled;
+            player.speakerEnabled = speakerEnabled;
+        }
+        socket.to(sessionDetails.chamberId).emit('voice:peer-state', {
+            peerId: socket.id,
+            micEnabled,
+            speakerEnabled,
+            voiceConnected: player?.voiceConnected
+        });
+        (0, game_1.saveSessionToRedis)(session);
+        broadcastChamberState(session);
+    });
+    socket.on('voice:speaking', (payload) => {
+        const parsed = shared_1.VoiceSpeakingSchema.safeParse(payload);
+        if (!parsed.success)
+            return;
+        const { speaking } = parsed.data;
+        const sessionDetails = socketSessions.get(socket.id);
+        if (!sessionDetails)
+            return;
+        const session = game_1.activeSessions.get(sessionDetails.chamberId);
+        if (!session)
+            return;
+        const player = session.players.find(p => p.id === socket.id);
+        if (player) {
+            player.speaking = speaking;
+        }
+        socket.to(sessionDetails.chamberId).emit('voice:peer-speaking', {
+            peerId: socket.id,
+            speaking
+        });
+    });
     // Socket Disconnection (e.g. tab closed or wifi dropped)
     socket.on('disconnect', () => {
         console.log(`Socket disconnected: ${socket.id}`);
@@ -733,6 +895,13 @@ io.on('connection', (socket) => {
         if (player) {
             player.isOnline = false;
             player.disconnectTime = Date.now();
+            player.voiceConnected = false;
+            player.speaking = false;
+            // Broadcast voice left to other players
+            socket.to(chamberId).emit('voice:peer-left', {
+                peerId: socket.id
+            });
+            voiceSignalingRateLimits.delete(socket.id);
             pushSystemMessage(chamberId, `SUBJECT ${codename.toUpperCase()} CONNECTION INTERRUPTED.`);
             pushAIAnnouncement(chamberId, `SUBJECT OFFLINE. RECONNECT TIMEOUT ENGAGED.`);
             // Immediate Host Transfer

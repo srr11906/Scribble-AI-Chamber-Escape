@@ -5,9 +5,10 @@ import { DrawingCanvas } from './DrawingCanvas';
 import { 
   Trophy, MessageSquare, Send, Bell, Shield, Zap, Key, 
   Volume2, VolumeX, CheckCircle, ChevronUp, AlertCircle,
-  Eye, EyeOff, Copy
+  Eye, EyeOff, Copy, Mic, MicOff
 } from 'lucide-react';
 import { audioSystem } from './AudioSystem';
+import { useVoice } from '../voice/VoiceContext';
 import confetti from 'canvas-confetti';
 
 interface GameScreenProps {
@@ -31,6 +32,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   const me = players.find(p => p.id === myId);
   const isDrawer = drawerId === myId;
   const activeDrawer = players.find(p => p.id === drawerId);
+
+  const { micEnabled, speakerEnabled, toggleMic, toggleSpeaker, connectionStatus } = useVoice();
 
   const [chatInput, setChatInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -161,11 +164,6 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           const rank = sorted.indexOf(currentRevealingPlayer) + 1;
           
           if (rank <= 3 && nextVal === players.length) {
-            confetti({
-              particleCount: 150,
-              spread: 80,
-              origin: { y: 0.6 }
-            });
             audioSystem.playChime();
           }
 
@@ -258,7 +256,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
               <span className="text-[8px] sm:text-[9px] text-chamber-secondary uppercase tracking-widest font-cyber block text-center truncate w-full">
                 {me?.isVerified ? 'SURVIVAL CODE RESOLVED' : 'SURVIVAL CODE HINT'}
               </span>
-              <span className="text-xs sm:text-base md:text-xl font-mono tracking-[0.08em] sm:tracking-[0.12em] md:tracking-[0.25em] text-chamber-cyan font-bold glow-cyan select-text uppercase whitespace-nowrap overflow-hidden text-center truncate max-w-[120px] sm:max-w-xs md:max-w-none">
+              <span className="text-[9px] sm:text-base md:text-xl font-mono tracking-[0.04em] sm:tracking-[0.12em] md:tracking-[0.25em] text-chamber-cyan font-bold glow-cyan select-text uppercase whitespace-nowrap overflow-hidden text-center truncate max-w-[200px] sm:max-w-xs md:max-w-none">
                 {me?.isVerified ? (chosenWord || hints) : hints}
               </span>
             </div>
@@ -277,7 +275,33 @@ export const GameScreen: React.FC<GameScreenProps> = ({
 
         {/* Action controls */}
         <div className="flex items-center gap-1.5 shrink-0 z-10">
-          {/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && (
+          {(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) && (
+            <div className="flex lg:hidden items-center gap-1 shrink-0">
+              <button
+                onClick={toggleMic}
+                className={`p-1 border rounded text-[9px] font-cyber px-1.5 flex items-center justify-center shrink-0 transition-all cursor-pointer ${
+                  micEnabled 
+                    ? 'border-chamber-cyan text-chamber-cyan bg-chamber-cyan/10 shadow-cyan-glow' 
+                    : 'border-chamber-secondary/30 text-chamber-secondary/50 bg-chamber-surface/20'
+                }`}
+                title="Toggle Mic"
+              >
+                {micEnabled ? <Mic size={11} /> : <MicOff size={11} />}
+              </button>
+              <button
+                onClick={toggleSpeaker}
+                className={`p-1 border rounded text-[9px] font-cyber px-1.5 flex items-center justify-center shrink-0 transition-all cursor-pointer ${
+                  speakerEnabled 
+                    ? 'border-chamber-cyan text-chamber-cyan bg-chamber-cyan/10 shadow-cyan-glow' 
+                    : 'border-chamber-red/40 text-chamber-red bg-chamber-red/10 shadow-red-glow'
+                }`}
+                title="Toggle Speaker"
+              >
+                {speakerEnabled ? <Volume2 size={11} /> : <VolumeX size={11} />}
+              </button>
+            </div>
+          )}
+          {(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) && (
             <button
               onClick={() => {
                 const doc = document.documentElement;
@@ -332,9 +356,11 @@ export const GameScreen: React.FC<GameScreenProps> = ({
               <div
                 key={p.id}
                 className={`relative flex items-center justify-between p-2.5 rounded-lg border transition-all ${
-                  p.id === myId
-                    ? 'bg-chamber-cyan/10 border-chamber-cyan/40 shadow-cyan-glow'
-                    : 'bg-chamber-bg/60 border-chamber-cyan/5'
+                  p.speaking
+                    ? 'border-chamber-cyan bg-chamber-cyan/5 shadow-cyan-glow scale-[1.02]'
+                    : p.id === myId
+                      ? 'bg-chamber-cyan/10 border-chamber-cyan/40 shadow-cyan-glow'
+                      : 'bg-chamber-bg/60 border-chamber-cyan/5'
                 } ${p.isSpectator ? 'opacity-60' : ''}`}
               >
                 {p.isVerified && (
@@ -350,6 +376,24 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                     <span className={`text-xs font-cyber uppercase truncate ${p.id === myId ? 'text-chamber-cyan font-bold' : 'text-chamber-text'}`}>
                       {p.codename}
                     </span>
+                    {p.voiceConnected && (
+                      <span className="flex items-center gap-1 ml-1 text-chamber-secondary">
+                        {p.speaking ? (
+                          <span className="flex items-center gap-[1.5px] px-1 bg-chamber-cyan/10 border border-chamber-cyan/20 rounded h-3.5 shrink-0">
+                            <span className="w-[1px] h-1 bg-chamber-cyan rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                            <span className="w-[1px] h-2 bg-chamber-cyan rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                            <span className="w-[1px] h-1 bg-chamber-cyan rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+                          </span>
+                        ) : p.micEnabled ? (
+                          <Mic size={9} className="text-chamber-cyan/80 animate-pulse" />
+                        ) : (
+                          <MicOff size={9} className="text-chamber-secondary/40" />
+                        )}
+                        {!p.speakerEnabled && (
+                          <VolumeX size={9} className="text-chamber-red/70 animate-pulse" />
+                        )}
+                      </span>
+                    )}
                     {p.isDrawer && (
                       <span className="text-[7px] text-chamber-red font-cyber tracking-widest uppercase animate-pulse">
                         TRANSMITTING DRAWING
@@ -372,6 +416,41 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Desktop Voice Control Panel */}
+          <div className="border-t border-chamber-cyan/15 pt-3 mt-1 flex flex-col gap-2 shrink-0">
+            <div className="flex items-center justify-between text-[7px] text-chamber-secondary uppercase tracking-widest font-cyber">
+              <span>VOICE TRANSCEIVER</span>
+              <span className={`animate-pulse ${connectionStatus === 'CONNECTED' ? 'text-chamber-cyan' : connectionStatus === 'RECONNECTING' ? 'text-chamber-yellow animate-ping' : 'text-chamber-red'}`}>
+                {connectionStatus}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={toggleMic}
+                className={`flex-1 py-1.5 border rounded text-[9px] font-cyber tracking-widest transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  micEnabled 
+                    ? 'border-chamber-cyan text-chamber-cyan bg-chamber-cyan/10 shadow-cyan-glow' 
+                    : 'border-chamber-secondary/30 text-chamber-secondary/50 hover:border-chamber-secondary bg-chamber-surface/20'
+                }`}
+              >
+                {micEnabled ? <Mic size={11} /> : <MicOff size={11} />}
+                <span>{micEnabled ? 'MIC ON' : 'MUTED'}</span>
+              </button>
+              
+              <button
+                onClick={toggleSpeaker}
+                className={`flex-1 py-1.5 border rounded text-[9px] font-cyber tracking-widest transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  speakerEnabled 
+                    ? 'border-chamber-cyan text-chamber-cyan bg-chamber-cyan/10 shadow-cyan-glow' 
+                    : 'border-chamber-red/40 text-chamber-red bg-chamber-red/10 shadow-red-glow'
+                }`}
+              >
+                {speakerEnabled ? <Volume2 size={11} /> : <VolumeX size={11} />}
+                <span>{speakerEnabled ? 'AUDIO' : 'MUTED'}</span>
+              </button>
+            </div>
           </div>
         </aside>
 
@@ -660,10 +739,12 @@ export const GameScreen: React.FC<GameScreenProps> = ({
             {sortedPlayers.map((player, idx) => (
               <div
                 key={player.id}
-                className={`relative flex items-center justify-between p-1 rounded border text-[9px] ${
-                  player.id === myId
-                    ? 'bg-chamber-cyan/10 border-chamber-cyan/40 shadow-cyan-glow'
-                    : 'bg-chamber-bg/60 border-chamber-cyan/5'
+                className={`relative flex items-center justify-between p-1 rounded border text-[9px] transition-all ${
+                  player.speaking
+                    ? 'border-chamber-cyan bg-chamber-cyan/5 shadow-cyan-glow'
+                    : player.id === myId
+                      ? 'bg-chamber-cyan/10 border-chamber-cyan/40 shadow-cyan-glow'
+                      : 'bg-chamber-bg/60 border-chamber-cyan/5'
                 } ${player.isSpectator ? 'opacity-65' : ''}`}
               >
                 {player.isVerified && (
@@ -679,6 +760,24 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                     <span className={`text-[9px] font-cyber uppercase truncate ${player.id === myId ? 'text-chamber-cyan font-bold' : 'text-chamber-text'}`}>
                       {player.codename}
                     </span>
+                    {player.voiceConnected && (
+                      <span className="flex items-center gap-0.5 ml-0.5 text-chamber-secondary">
+                        {player.speaking ? (
+                          <span className="flex items-center gap-[1px] px-0.5 bg-chamber-cyan/10 border border-chamber-cyan/20 rounded h-3 shrink-0">
+                            <span className="w-[1px] h-1 bg-chamber-cyan rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                            <span className="w-[1px] h-1.5 bg-chamber-cyan rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                            <span className="w-[1px] h-1 bg-chamber-cyan rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+                          </span>
+                        ) : player.micEnabled ? (
+                          <Mic size={8} className="text-chamber-cyan/80 animate-pulse" />
+                        ) : (
+                          <MicOff size={8} className="text-chamber-secondary/40" />
+                        )}
+                        {!player.speakerEnabled && (
+                          <VolumeX size={8} className="text-chamber-red/70 animate-pulse" />
+                        )}
+                      </span>
+                    )}
                     {player.isDrawer && (
                       <span className="text-[6px] text-chamber-red font-cyber tracking-widest uppercase animate-pulse leading-none">
                         DRAWING

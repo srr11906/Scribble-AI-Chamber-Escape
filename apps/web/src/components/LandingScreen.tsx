@@ -55,12 +55,33 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
             SECURITY SYSTEM V25.8
           </span>
         </div>
-        <button
-          onClick={onToggleAudio}
-          className="p-2 border border-chamber-cyan/20 hover:border-chamber-cyan/60 rounded-lg text-chamber-cyan bg-chamber-surface/65 shadow-cyan-glow transition-all"
-        >
-          {audioMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-        </button>
+        <div className="flex items-center gap-2">
+          {(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) && (
+            <button
+              onClick={() => {
+                const doc = document.documentElement;
+                if (!document.fullscreenElement) {
+                  if (doc.requestFullscreen) doc.requestFullscreen();
+                  // @ts-ignore
+                  else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
+                } else {
+                  if (document.exitFullscreen) document.exitFullscreen();
+                }
+                audioSystem.playBeep();
+              }}
+              className="px-2.5 py-1.5 border border-chamber-cyan/20 hover:border-chamber-cyan text-chamber-cyan bg-chamber-cyan/5 rounded-lg text-[9px] font-cyber tracking-widest transition-all cursor-pointer"
+              title="Toggle Fullscreen"
+            >
+              FULLSCREEN
+            </button>
+          )}
+          <button
+            onClick={onToggleAudio}
+            className="p-2 border border-chamber-cyan/20 hover:border-chamber-cyan/60 rounded-lg text-chamber-cyan bg-chamber-surface/65 shadow-cyan-glow transition-all cursor-pointer"
+          >
+            {audioMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+          </button>
+        </div>
       </header>
 
       {/* Main Core Section */}

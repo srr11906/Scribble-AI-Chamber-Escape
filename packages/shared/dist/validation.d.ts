@@ -25,3 +25,22 @@ export declare const StrokeSchema: z.ZodObject<{
     size: z.ZodNumber;
     isEraser: z.ZodBoolean;
 }, z.core.$strip>;
+export declare const VoiceOfferSchema: z.ZodObject<{
+    targetId: z.ZodString;
+    sdp: z.ZodAny;
+}, z.core.$strip>;
+export declare const VoiceAnswerSchema: z.ZodObject<{
+    targetId: z.ZodString;
+    sdp: z.ZodAny;
+}, z.core.$strip>;
+export declare const VoiceIceCandidateSchema: z.ZodObject<{
+    targetId: z.ZodString;
+    candidate: z.ZodAny;
+}, z.core.$strip>;
+export declare const VoiceStateSchema: z.ZodObject<{
+    micEnabled: z.ZodBoolean;
+    speakerEnabled: z.ZodBoolean;
+}, z.core.$strip>;
+export declare const VoiceSpeakingSchema: z.ZodObject<{
+    speaking: z.ZodBoolean;
+}, z.core.$strip>;

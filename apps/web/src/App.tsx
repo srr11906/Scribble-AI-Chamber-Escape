@@ -6,28 +6,29 @@ import { LobbyScreen } from './components/LobbyScreen';
 import { GameScreen } from './components/GameScreen';
 import { audioSystem } from './components/AudioSystem';
 import { Eye } from 'lucide-react';
+import { VoiceProvider, useVoice } from './voice/VoiceContext';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:4000';
 
-export const App: React.FC = () => {
-  const [socket, setSocket] = useState<Socket | null>(null);
+const AppContent: React.FC<{ socket: Socket | null }> = ({ socket }) => {
   const [chamberState, setChamberState] = useState<ChamberState | null>(null);
   const [codename, setCodename] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [audioMuted, setAudioMuted] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
+
+  const { autoplayBlocked, resumeBlockedAudio, joinVoice, leaveVoice, connectionStatus } = useVoice();
 
   const [sharedChamberId] = useState<string>(() => {
     const path = window.location.pathname;
     const match = path.match(/^\/r\/([A-Z0-9]{6})$/i);
     return match ? match[1].toUpperCase() : '';
   });
-  const [isConnected, setIsConnected] = useState(false);
-  
   const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
 
   useEffect(() => {
-    const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
     setIsMobileDevice(mobile);
 
     if (mobile) {
@@ -37,7 +38,6 @@ export const App: React.FC = () => {
           setShowFullscreenPrompt(true);
         }
       } catch (e) {
-        // Fallback for private mode without session storage access
         setShowFullscreenPrompt(true);
       }
     }
@@ -77,35 +77,30 @@ export const App: React.FC = () => {
     audioSystem.playBeep();
   };
 
-  // Initialize Socket.IO connection
+  // Register socket listeners on the connection
   useEffect(() => {
-    const newSocket = io(SOCKET_URL, {
-      transports: ['websocket'],
-      autoConnect: true,
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-    });
+    if (!socket) return;
 
-    setSocket(newSocket);
+    if (socket.connected) {
+      setIsConnected(true);
+    }
 
-    newSocket.on('connect', () => {
+    const onConnect = () => {
       console.log('Connected to AI Chamber security uplink.');
       setIsConnected(true);
       setError(null);
-    });
+    };
 
-    newSocket.on('connect_error', () => {
+    const onConnectError = () => {
       setIsConnected(false);
-    });
+    };
 
-    newSocket.on('chamberUpdated', (state: ChamberState) => {
+    const onChamberUpdated = (state: ChamberState) => {
       setChamberState(state);
       setError(null);
-    });
+    };
 
-    newSocket.on('canvasRestore', (history: any[]) => {
+    const onCanvasRestore = (history: any[]) => {
       setChamberState(prev => {
         if (!prev) return null;
         return {
@@ -113,22 +108,47 @@ export const App: React.FC = () => {
           canvasHistory: history,
         };
       });
-    });
+    };
 
-    newSocket.on('error', (message: string) => {
+    const onError = (message: string) => {
       setError(message);
       audioSystem.playBuzz();
-    });
+    };
 
-    newSocket.on('disconnect', () => {
+    const onDisconnect = () => {
       console.warn('Uplink interrupted. Attempting reconnection...');
       setIsConnected(false);
-    });
+    };
+
+    socket.on('connect', onConnect);
+    socket.on('connect_error', onConnectError);
+    socket.on('chamberUpdated', onChamberUpdated);
+    socket.on('canvasRestore', onCanvasRestore);
+    socket.on('error', onError);
+    socket.on('disconnect', onDisconnect);
 
     return () => {
-      newSocket.disconnect();
+      socket.off('connect', onConnect);
+      socket.off('connect_error', onConnectError);
+      socket.off('chamberUpdated', onChamberUpdated);
+      socket.off('canvasRestore', onCanvasRestore);
+      socket.off('error', onError);
+      socket.off('disconnect', onDisconnect);
     };
-  }, []);
+  }, [socket]);
+
+  // Synchronize WebRTC voice lifecycle based on chamber join status
+  useEffect(() => {
+    if (chamberState) {
+      if (connectionStatus === 'DISCONNECTED') {
+        joinVoice().catch(err => console.error('Failed to join voice room:', err));
+      }
+    } else {
+      if (connectionStatus !== 'DISCONNECTED') {
+        leaveVoice();
+      }
+    }
+  }, [chamberState, connectionStatus, joinVoice, leaveVoice]);
 
   // Pre-fill Join Room Tab if link contains code
   useEffect(() => {
@@ -143,7 +163,6 @@ export const App: React.FC = () => {
     setAudioMuted(nextMute);
     audioSystem.setMute(nextMute);
     
-    // Play interaction beep
     if (!nextMute) {
       audioSystem.playBeep();
     }
@@ -182,7 +201,6 @@ export const App: React.FC = () => {
     setChamberState(null);
     setCodename('');
     setError(null);
-    // Clear URL path to reset state
     window.history.pushState({}, '', '/');
   };
 
@@ -254,24 +272,61 @@ export const App: React.FC = () => {
               </div>
             )}
 
-            <div className="flex flex-col gap-1.5 w-full">
+            <div className="flex flex-col gap-2 w-full">
               <button
                 onClick={handleEngageFullscreen}
-                className="w-full py-2 bg-chamber-cyan text-chamber-bg font-cyber font-bold tracking-widest text-[10px] rounded-lg shadow-cyan-glow hover:bg-chamber-cyan/90 transition-all cursor-pointer"
+                className="w-full py-2 bg-chamber-cyan text-chamber-bg font-cyber tracking-widest font-black uppercase text-[9px] rounded-lg shadow-cyan-glow cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
                 ENGAGE FULLSCREEN
               </button>
               <button
                 onClick={handleDismissFullscreen}
-                className="w-full py-1.5 border border-chamber-cyan/25 text-chamber-secondary font-cyber tracking-widest text-[8px] rounded-lg hover:border-chamber-cyan/45 transition-all cursor-pointer"
+                className="w-full py-1.5 border border-chamber-secondary/25 text-chamber-secondary font-cyber tracking-widest uppercase text-[8px] rounded-lg cursor-pointer transition-all hover:text-white"
               >
-                SKIP CALIBRATION
+                STAY WINDOWED
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Autoplay Blocked Alert banner */}
+      {autoplayBlocked && (
+        <div 
+          onClick={resumeBlockedAudio}
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-chamber-cyan text-chamber-bg border border-chamber-cyan shadow-cyan-glow font-cyber uppercase tracking-widest text-[9px] font-black px-4 py-2.5 rounded-lg cursor-pointer z-[250] hover:scale-105 active:scale-95 transition-all text-center animate-pulse animate-duration-1000"
+        >
+          ⚠️ TAP HERE TO UNLOCK REMOTE CHAMBER AUDIO STABILIZER
+        </div>
+      )}
     </div>
+  );
+};
+
+export const App: React.FC = () => {
+  const [socket, setSocket] = useState<Socket | null>(null);
+
+  useEffect(() => {
+    const newSocket = io(SOCKET_URL, {
+      transports: ['websocket'],
+      autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.close();
+    };
+  }, []);
+
+  return (
+    <VoiceProvider socket={socket}>
+      <AppContent socket={socket} />
+    </VoiceProvider>
   );
 };
 

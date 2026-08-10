@@ -32,3 +32,27 @@ export const StrokeSchema = z.object({
   size: z.number().positive(),
   isEraser: z.boolean(),
 });
+
+export const VoiceOfferSchema = z.object({
+  targetId: z.string().min(1, 'Target ID is required'),
+  sdp: z.any(),
+});
+
+export const VoiceAnswerSchema = z.object({
+  targetId: z.string().min(1, 'Target ID is required'),
+  sdp: z.any(),
+});
+
+export const VoiceIceCandidateSchema = z.object({
+  targetId: z.string().min(1, 'Target ID is required'),
+  candidate: z.any(),
+});
+
+export const VoiceStateSchema = z.object({
+  micEnabled: z.boolean(),
+  speakerEnabled: z.boolean(),
+});
+
+export const VoiceSpeakingSchema = z.object({
+  speaking: z.boolean(),
+});
