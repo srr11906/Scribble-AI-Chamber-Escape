@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NeonCore } from './NeonCore';
-import { Volume2, VolumeX, ShieldAlert, ArrowRight, Server } from 'lucide-react';
+import { Bell, BellOff, ShieldAlert, ArrowRight, Server } from 'lucide-react';
 import { audioSystem } from './AudioSystem';
 
 interface LandingScreenProps {
@@ -78,8 +78,9 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
           <button
             onClick={onToggleAudio}
             className="p-2 border border-chamber-cyan/20 hover:border-chamber-cyan/60 rounded-lg text-chamber-cyan bg-chamber-surface/65 shadow-cyan-glow transition-all cursor-pointer"
+            title="Toggle Game Sounds"
           >
-            {audioMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+            {audioMuted ? <BellOff size={16} /> : <Bell size={16} />}
           </button>
         </div>
       </header>

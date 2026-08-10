@@ -72,30 +72,31 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {/* Voice Controls */}
+          {/* Voice Controls */}
           <button
             onClick={toggleMic}
-            className={`px-2 py-1 border rounded-lg text-[9px] font-cyber tracking-widest transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+            className={`p-1 sm:px-2 sm:py-1 border rounded text-[9px] font-cyber tracking-widest transition-all cursor-pointer flex items-center justify-center gap-1 shrink-0 ${
               micEnabled
                 ? 'border-chamber-cyan text-chamber-cyan bg-chamber-cyan/10 shadow-cyan-glow'
                 : 'border-chamber-secondary/30 text-chamber-secondary/50 hover:border-chamber-secondary bg-chamber-surface/20'
             }`}
             title="Toggle Microphone"
           >
-            {micEnabled ? <Mic size={10} /> : <MicOff size={10} />}
-            <span>MIC: {micEnabled ? 'ON' : 'OFF'}</span>
+            {micEnabled ? <Mic size={11} /> : <MicOff size={11} />}
+            <span className="hidden sm:inline">Microphone: {micEnabled ? 'ON' : 'OFF'}</span>
           </button>
           
           <button
             onClick={toggleSpeaker}
-            className={`px-2 py-1 border rounded-lg text-[9px] font-cyber tracking-widest transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+            className={`p-1 sm:px-2 sm:py-1 border rounded text-[9px] font-cyber tracking-widest transition-all cursor-pointer flex items-center justify-center gap-1 shrink-0 ${
               speakerEnabled
                 ? 'border-chamber-cyan text-chamber-cyan bg-chamber-cyan/10 shadow-cyan-glow'
                 : 'border-chamber-red/40 text-chamber-red bg-chamber-red/10 shadow-red-glow'
             }`}
             title="Toggle Voice Speaker"
           >
-            {speakerEnabled ? <Volume2 size={10} /> : <VolumeX size={10} />}
-            <span>VOICE: {speakerEnabled ? 'ACTIVE' : 'MUTED'}</span>
+            {speakerEnabled ? <Volume2 size={11} /> : <VolumeX size={11} />}
+            <span className="hidden sm:inline">Speaker: {speakerEnabled ? 'ON' : 'OFF'}</span>
           </button>
 
           {(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) && (
@@ -111,10 +112,11 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                 }
                 audioSystem.playBeep();
               }}
-              className="px-2 py-1 border border-chamber-cyan/20 hover:border-chamber-cyan text-chamber-cyan bg-chamber-cyan/5 rounded-lg text-[9px] font-cyber tracking-widest transition-all cursor-pointer"
+              className="p-1 border border-chamber-cyan/20 hover:border-chamber-cyan text-chamber-cyan bg-chamber-cyan/5 rounded text-[9px] font-cyber px-1.5 shrink-0"
               title="Toggle Fullscreen"
             >
-              FULLSCREEN
+              <span className="hidden sm:inline">FULLSCREEN</span>
+              <span className="sm:hidden block px-0.5 font-bold">FS</span>
             </button>
           )}
           <button
@@ -122,9 +124,11 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
               audioSystem.playBuzz();
               onLeaveChamber();
             }}
-            className="px-2.5 py-1 border border-chamber-red/25 hover:border-chamber-red text-chamber-red bg-chamber-red/10 rounded-lg text-[9px] font-cyber tracking-widest transition-all cursor-pointer"
+            className="p-1 sm:px-2.5 sm:py-1 border border-chamber-red/25 hover:border-chamber-red text-chamber-red bg-chamber-red/10 rounded text-[9px] font-cyber tracking-widest transition-all cursor-pointer shrink-0"
+            title="Disconnect"
           >
-            DISCONNECT
+            <span className="hidden sm:inline">DISCONNECT</span>
+            <span className="sm:hidden block px-0.5 font-bold">X</span>
           </button>
         </div>
       </header>

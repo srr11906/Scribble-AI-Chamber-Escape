@@ -3,7 +3,7 @@ import { Socket } from 'socket.io-client';
 import { ChamberState, Player, ChatMessage, CompressedStroke } from 'shared';
 import { DrawingCanvas } from './DrawingCanvas';
 import { 
-  Trophy, MessageSquare, Send, Bell, Shield, Zap, Key, 
+  Trophy, MessageSquare, Send, Bell, BellOff, Shield, Zap, Key, 
   Volume2, VolumeX, CheckCircle, ChevronUp, AlertCircle,
   Eye, EyeOff, Copy, Mic, MicOff
 } from 'lucide-react';
@@ -44,25 +44,6 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   const [showWordToDrawer, setShowWordToDrawer] = useState(true);
   const [copied, setCopied] = useState(false);
 
-  // Lock keyboard adjustments for mobile viewports
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-
-    const handleViewportChange = () => {
-      const height = vv.height;
-      document.documentElement.style.setProperty('--viewport-height', `${height}px`);
-    };
-
-    vv.addEventListener('resize', handleViewportChange);
-    vv.addEventListener('scroll', handleViewportChange);
-    handleViewportChange();
-
-    return () => {
-      vv.removeEventListener('resize', handleViewportChange);
-      vv.removeEventListener('scroll', handleViewportChange);
-    };
-  }, []);
 
   const handleCopyChamberCode = () => {
     navigator.clipboard.writeText(`${window.location.origin}/r/${chamberId}`);
@@ -71,8 +52,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const chatEndRef = useRef<HTMLDivElement>(null);
-  const mobileChatEndRef = useRef<HTMLDivElement>(null);
+  const chatLogRef = useRef<HTMLDivElement>(null);
+  const mobileChatLogRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sound listeners from server
@@ -134,10 +115,14 @@ export const GameScreen: React.FC<GameScreenProps> = ({
     };
   }, [socket, me]);
 
-  // Auto scroll chat
+  // Auto scroll chat logs locally without scrolling the window
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    mobileChatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (chatLogRef.current) {
+      chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
+    }
+    if (mobileChatLogRef.current) {
+      mobileChatLogRef.current.scrollTop = mobileChatLogRef.current.scrollHeight;
+    }
   }, [messages, typingPlayers]);
 
   // Handle final results sequence (confetti and ranking reveal)
@@ -223,7 +208,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   return (
     <div 
       className="w-full bg-chamber-bg cyber-grid flex flex-col justify-between overflow-hidden select-none relative"
-      style={{ height: 'var(--viewport-height, 100dvh)' }}
+      style={{ height: '100%' }}
     >
       <div className="scanlines animate-scanline" />
 
@@ -275,32 +260,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
 
         {/* Action controls */}
         <div className="flex items-center gap-1.5 shrink-0 z-10">
-          {(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) && (
-            <div className="flex lg:hidden items-center gap-1 shrink-0">
-              <button
-                onClick={toggleMic}
-                className={`p-1 border rounded text-[9px] font-cyber px-1.5 flex items-center justify-center shrink-0 transition-all cursor-pointer ${
-                  micEnabled 
-                    ? 'border-chamber-cyan text-chamber-cyan bg-chamber-cyan/10 shadow-cyan-glow' 
-                    : 'border-chamber-secondary/30 text-chamber-secondary/50 bg-chamber-surface/20'
-                }`}
-                title="Toggle Mic"
-              >
-                {micEnabled ? <Mic size={11} /> : <MicOff size={11} />}
-              </button>
-              <button
-                onClick={toggleSpeaker}
-                className={`p-1 border rounded text-[9px] font-cyber px-1.5 flex items-center justify-center shrink-0 transition-all cursor-pointer ${
-                  speakerEnabled 
-                    ? 'border-chamber-cyan text-chamber-cyan bg-chamber-cyan/10 shadow-cyan-glow' 
-                    : 'border-chamber-red/40 text-chamber-red bg-chamber-red/10 shadow-red-glow'
-                }`}
-                title="Toggle Speaker"
-              >
-                {speakerEnabled ? <Volume2 size={11} /> : <VolumeX size={11} />}
-              </button>
-            </div>
-          )}
+          {/* Mobile Fullscreen Toggle */}
           {(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) && (
             <button
               onClick={() => {
@@ -314,28 +274,63 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                 }
                 audioSystem.playBeep();
               }}
-              className="p-1 border border-chamber-cyan/20 hover:border-chamber-cyan rounded text-chamber-cyan bg-chamber-bg/60 transition-colors text-[9px] font-cyber px-2"
+              className="p-1 border border-chamber-cyan/20 hover:border-chamber-cyan rounded text-chamber-cyan bg-chamber-bg/60 transition-colors text-[9px] font-cyber px-1.5 shrink-0"
               title="Toggle Fullscreen"
             >
               FS
             </button>
           )}
+
+          {/* Mobile Microphone Toggle */}
+          {(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) && (
+            <button
+              onClick={toggleMic}
+              className={`p-1 border rounded text-[9px] font-cyber px-1.5 flex items-center justify-center shrink-0 transition-all cursor-pointer ${
+                micEnabled 
+                  ? 'border-chamber-cyan text-chamber-cyan bg-chamber-cyan/10 shadow-cyan-glow' 
+                  : 'border-chamber-secondary/30 text-chamber-secondary/50 bg-chamber-surface/20'
+              }`}
+              title="Toggle Microphone"
+            >
+              {micEnabled ? <Mic size={11} /> : <MicOff size={11} />}
+            </button>
+          )}
+
+          {/* Mobile Speaker Toggle */}
+          {(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) && (
+            <button
+              onClick={toggleSpeaker}
+              className={`p-1 border rounded text-[9px] font-cyber px-1.5 flex items-center justify-center shrink-0 transition-all cursor-pointer ${
+                speakerEnabled 
+                  ? 'border-chamber-cyan text-chamber-cyan bg-chamber-cyan/10 shadow-cyan-glow' 
+                  : 'border-chamber-red/40 text-chamber-red bg-chamber-red/10 shadow-red-glow'
+              }`}
+              title="Toggle Speaker"
+            >
+              {speakerEnabled ? <Volume2 size={11} /> : <VolumeX size={11} />}
+            </button>
+          )}
+
+          {/* Desktop Game sounds mute button */}
           <button
             onClick={onToggleAudio}
-            className="p-1 sm:p-1.5 border border-chamber-cyan/20 hover:border-chamber-cyan/50 rounded text-chamber-cyan bg-chamber-bg/60 transition-colors"
+            className="hidden lg:block p-1 border border-chamber-cyan/20 hover:border-chamber-cyan/50 rounded text-chamber-cyan bg-chamber-bg/60 transition-colors shrink-0"
+            title="Toggle Game Sounds"
           >
-            {audioMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
+            {audioMuted ? <BellOff size={13} /> : <Bell size={13} />}
           </button>
+
+          {/* Desktop Abort button */}
           <button
             onClick={() => {
               audioSystem.playBuzz();
               onLeaveChamber();
             }}
-            className="p-1 sm:px-2 sm:py-1 border border-chamber-red/20 hover:border-chamber-red/60 rounded text-chamber-red bg-chamber-red/5 hover:bg-chamber-red/10 transition-all cursor-pointer flex items-center justify-center"
+            className="hidden lg:block p-1 border border-chamber-red/20 hover:border-chamber-red rounded text-chamber-red bg-chamber-bg/60 transition-colors text-[9px] font-cyber px-1.5 shrink-0"
             title="Abort Match"
           >
             <span className="hidden sm:inline text-[9px] font-cyber tracking-widest px-1">ABORT</span>
-            <span className="sm:hidden block px-1 text-[9px] font-cyber font-bold">X</span>
+            <span className="sm:hidden block px-0.5 text-[9px] font-cyber font-bold">X</span>
           </button>
         </div>
       </header>
@@ -436,7 +431,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                 }`}
               >
                 {micEnabled ? <Mic size={11} /> : <MicOff size={11} />}
-                <span>{micEnabled ? 'MIC ON' : 'MUTED'}</span>
+                <span>{micEnabled ? 'Microphone' : 'Muted'}</span>
               </button>
               
               <button
@@ -448,7 +443,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                 }`}
               >
                 {speakerEnabled ? <Volume2 size={11} /> : <VolumeX size={11} />}
-                <span>{speakerEnabled ? 'AUDIO' : 'MUTED'}</span>
+                <span>{speakerEnabled ? 'Speaker' : 'Muted'}</span>
               </button>
             </div>
           </div>
@@ -801,7 +796,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
 
           {/* Right Side: Chat Interface */}
           <div className="flex-1 flex flex-col justify-between overflow-hidden p-1.5 min-w-0">
-            <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 mb-1.5">
+            <div ref={mobileChatLogRef} className="flex-1 overflow-y-auto space-y-1.5 pr-1 mb-1.5">
               {messages.map((msg) => {
                 const isSystem = msg.isSystem;
                 const isOwn = msg.senderId === myId;
@@ -845,7 +840,6 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                   <span>TYPING: {Object.values(players).filter(p => typingPlayers[p.id]).map(p => p.codename.toUpperCase()).join(', ')}</span>
                 </div>
               )}
-              <div ref={mobileChatEndRef} />
             </div>
 
             {/* Input Form */}
@@ -901,7 +895,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
 
           {/* Main Chat Interface */}
           <div className="flex-1 flex flex-col justify-between overflow-hidden p-3 relative bg-chamber-surface/20">
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1 mb-2">
+            <div ref={chatLogRef} className="flex-1 overflow-y-auto space-y-2 pr-1 mb-2">
               {messages.map((msg) => {
                 const isSystem = msg.isSystem;
                 const isOwn = msg.senderId === myId;
@@ -947,8 +941,6 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                   <span>{Object.values(players).filter(p => typingPlayers[p.id]).map(p => p.codename.toUpperCase()).join(', ')}...</span>
                 </div>
               )}
-
-              <div ref={chatEndRef} />
             </div>
 
             {/* Input form */}
@@ -964,12 +956,6 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                 maxLength={40}
                 value={chatInput}
                 onChange={handleChatInputChange}
-                onFocus={() => {
-                  setTimeout(() => {
-                    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as any });
-                    document.body.scrollTop = 0;
-                  }, 60);
-                }}
                 placeholder={isDrawer ? "DRAWER CANNOT GUESS" : me?.isVerified ? "IDENTITY VERIFIED" : me?.isSpectator ? "CHAT (SPECTATOR)..." : "ENTER GUESS CODE..."}
                 className="flex-1 bg-chamber-bg border border-chamber-cyan/20 focus:border-chamber-cyan/70 focus:outline-none rounded-lg px-3 py-2 text-base font-mono text-chamber-text placeholder:text-chamber-secondary/35 disabled:opacity-40"
               />
