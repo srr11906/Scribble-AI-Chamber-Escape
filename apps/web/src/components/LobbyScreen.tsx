@@ -260,26 +260,101 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                   </select>
                 </div>
 
-                {/* Word Pack */}
-                <div className="space-y-1.5">
+                {/* Word Pack Selection */}
+                <div className="space-y-1.5 md:col-span-2">
                   <label className="text-[10px] text-chamber-secondary uppercase tracking-wider flex items-center gap-1.5 font-cyber">
                     <Layers size={12} className="text-chamber-cyan" />
-                    Survival Code Pack
+                    Survival Code Pack Mode
                   </label>
-                  <select
-                    disabled={!isHost}
-                    value={config.wordPack}
-                    onChange={e => handleConfigChange('wordPack', e.target.value)}
-                    className="w-full bg-chamber-bg border border-chamber-cyan/20 hover:border-chamber-cyan/40 focus:border-chamber-cyan/70 focus:outline-none rounded-lg px-3 py-2 text-sm text-chamber-text font-mono disabled:opacity-50"
-                  >
-                    <option value="all" className="bg-chamber-surface text-chamber-text">ALL CATEGORIES</option>
-                    <option value="custom" className="bg-chamber-surface text-chamber-text">CUSTOM PROTOCOL (TEXT)</option>
-                    {WORD_CATEGORIES.filter(cat => cat !== 'food').map(cat => (
-                      <option key={cat} value={cat} className="bg-chamber-surface text-chamber-text">
-                        {cat.toUpperCase()} PACK
-                      </option>
-                    ))}
-                  </select>
+                  
+                  {/* Mode Selector Buttons */}
+                  <div className="grid grid-cols-3 gap-2 p-1 bg-chamber-bg border border-chamber-cyan/15 rounded-lg mb-3">
+                    <button
+                      type="button"
+                      disabled={!isHost}
+                      onClick={() => handleConfigChange('wordPack', 'all')}
+                      className={`py-1.5 rounded text-[10px] font-cyber tracking-wider uppercase transition-all ${
+                        config.wordPack === 'all'
+                          ? 'bg-chamber-cyan/20 text-chamber-cyan border border-chamber-cyan/35'
+                          : 'text-chamber-secondary hover:text-white disabled:opacity-50'
+                      }`}
+                    >
+                      ALL PACKS
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!isHost}
+                      onClick={() => handleConfigChange('wordPack', 'custom')}
+                      className={`py-1.5 rounded text-[10px] font-cyber tracking-wider uppercase transition-all ${
+                        config.wordPack === 'custom'
+                          ? 'bg-chamber-cyan/20 text-chamber-cyan border border-chamber-cyan/35'
+                          : 'text-chamber-secondary hover:text-white disabled:opacity-50'
+                      }`}
+                    >
+                      CUSTOM WORDS
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!isHost}
+                      onClick={() => {
+                        handleConfigChange('wordPack', 'movies');
+                      }}
+                      className={`py-1.5 rounded text-[10px] font-cyber tracking-wider uppercase transition-all ${
+                        config.wordPack !== 'all' && config.wordPack !== 'custom'
+                          ? 'bg-chamber-cyan/20 text-chamber-cyan border border-chamber-cyan/35'
+                          : 'text-chamber-secondary hover:text-white disabled:opacity-50'
+                      }`}
+                    >
+                      SELECT PACKS
+                    </button>
+                  </div>
+
+                  {/* Multi-Pack Selection Grid */}
+                  {config.wordPack !== 'all' && config.wordPack !== 'custom' && (
+                    <div className="space-y-2 mt-2">
+                      <label className="text-[9px] text-chamber-secondary/70 uppercase tracking-widest font-cyber block mb-1">
+                        Select Active Code Categories:
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-36 sm:max-h-48 overflow-y-auto border border-chamber-cyan/10 p-2.5 rounded-lg bg-chamber-bg/50">
+                        {WORD_CATEGORIES.map(cat => {
+                          const activeCategories = config.wordPack.split(',').map(c => c.trim());
+                          const isSelected = activeCategories.includes(cat);
+
+                          const handleToggleCategory = () => {
+                            if (!isHost) return;
+                            let newCategories: string[];
+                            if (isSelected) {
+                              newCategories = activeCategories.filter(c => c !== cat);
+                            } else {
+                              newCategories = [...activeCategories, cat];
+                            }
+                            if (newCategories.length === 0) {
+                              handleConfigChange('wordPack', 'all');
+                            } else {
+                              handleConfigChange('wordPack', newCategories.join(','));
+                            }
+                          };
+
+                          return (
+                            <button
+                              key={cat}
+                              type="button"
+                              disabled={!isHost}
+                              onClick={handleToggleCategory}
+                              className={`py-1 px-2 border rounded text-[9px] font-cyber tracking-wider uppercase transition-all text-left truncate flex items-center justify-between cursor-pointer ${
+                                isSelected
+                                  ? 'border-chamber-cyan text-chamber-cyan bg-chamber-cyan/15 shadow-cyan-glow'
+                                  : 'border-chamber-cyan/10 text-chamber-secondary/70 bg-chamber-surface/10 hover:border-chamber-cyan/30 hover:text-chamber-text'
+                              } disabled:cursor-not-allowed`}
+                            >
+                              <span>{cat === 'movies' ? '🎬 Movies' : `${cat}`}</span>
+                              {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-chamber-cyan animate-pulse shadow-cyan-glow" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -323,32 +398,32 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
               {players.map(player => (
                 <div
                   key={player.id}
-                  className={`flex items-center justify-between p-2 sm:p-2.5 bg-chamber-bg border rounded-lg transition-all ${
+                  className={`flex items-center justify-between p-3.5 sm:p-2.5 bg-chamber-bg border rounded-lg transition-all ${
                     player.speaking
                       ? 'border-chamber-cyan shadow-cyan-glow bg-chamber-cyan/5 scale-[1.01]'
                       : 'border-chamber-cyan/10'
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <div className={`w-1.5 h-1.5 rounded-full ${player.isOnline ? 'bg-chamber-green shadow-green-glow animate-pulse' : 'bg-zinc-600'}`} />
-                    <span className={`text-sm font-cyber uppercase ${player.id === myId ? 'text-chamber-cyan font-bold' : 'text-chamber-text'}`}>
+                    <div className={`w-2 h-2 sm:w-1.5 sm:h-1.5 rounded-full ${player.isOnline ? 'bg-chamber-green shadow-green-glow animate-pulse' : 'bg-zinc-600'}`} />
+                    <span className={`text-base sm:text-sm font-cyber uppercase ${player.id === myId ? 'text-chamber-cyan font-bold' : 'text-chamber-text'}`}>
                       {player.codename}
                     </span>
                     {player.voiceConnected && (
-                      <span className="flex items-center gap-1 ml-1 text-chamber-secondary">
+                      <span className="flex items-center gap-1.5 ml-1 text-chamber-secondary">
                         {player.speaking ? (
-                          <span className="flex items-center gap-[1.5px] px-1 bg-chamber-cyan/10 border border-chamber-cyan/20 rounded h-4 shrink-0">
+                          <span className="flex items-center gap-[1.5px] px-1 bg-chamber-cyan/10 border border-chamber-cyan/20 rounded h-4.5 shrink-0">
                             <span className="w-[1.5px] h-1.5 bg-chamber-cyan rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
                             <span className="w-[1.5px] h-2.5 bg-chamber-cyan rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
                             <span className="w-[1.5px] h-1.5 bg-chamber-cyan rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
                           </span>
                         ) : player.micEnabled ? (
-                          <Mic size={10} className="text-chamber-cyan/80 animate-pulse" />
+                          <Mic className="w-3.5 h-3.5 sm:w-2.5 sm:h-2.5 text-chamber-cyan/80 animate-pulse" />
                         ) : (
-                          <MicOff size={10} className="text-chamber-secondary/40" />
+                          <MicOff className="w-3.5 h-3.5 sm:w-2.5 sm:h-2.5 text-chamber-secondary/40" />
                         )}
                         {!player.speakerEnabled && (
-                          <VolumeX size={10} className="text-chamber-red/70 animate-pulse" />
+                          <VolumeX className="w-3.5 h-3.5 sm:w-2.5 sm:h-2.5 text-chamber-red/70 animate-pulse" />
                         )}
                       </span>
                     )}

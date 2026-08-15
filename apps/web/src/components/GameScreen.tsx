@@ -197,6 +197,20 @@ export const GameScreen: React.FC<GameScreenProps> = ({
     }
   };
 
+  const renderWordWithThinBlanks = (wordOrHint: string, isGreen = false) => {
+    return wordOrHint.split('').map((char, idx) => {
+      if (char === '_') {
+        return (
+          <span 
+            key={idx} 
+            className={`inline-block border-b-2 ${isGreen ? 'border-chamber-green/70' : 'border-chamber-cyan/70'} w-1.5 md:w-3 mx-[1px] md:mx-[2px] -translate-y-[2px] md:-translate-y-[4px]`} 
+          />
+        );
+      }
+      return <span key={idx}>{char}</span>;
+    });
+  };
+
   // Sort players for leaderboard
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
 
@@ -241,8 +255,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
               <span className="text-[8px] sm:text-[9px] text-chamber-secondary uppercase tracking-widest font-cyber block text-center truncate w-full">
                 {me?.isVerified ? 'SURVIVAL CODE RESOLVED' : 'SURVIVAL CODE HINT'}
               </span>
-              <span className="text-[9px] sm:text-base md:text-xl font-mono tracking-[0.04em] sm:tracking-[0.12em] md:tracking-[0.25em] text-chamber-cyan font-bold glow-cyan select-text uppercase whitespace-nowrap overflow-hidden text-center truncate max-w-[200px] sm:max-w-xs md:max-w-none">
-                {me?.isVerified ? (chosenWord || hints) : hints}
+              <span className="text-[9px] sm:text-base md:text-xl font-mono tracking-[0.04em] sm:tracking-[0.12em] md:tracking-[0.25em] text-chamber-cyan font-bold glow-cyan select-text uppercase whitespace-pre overflow-hidden text-center truncate max-w-[200px] sm:max-w-xs md:max-w-none">
+                {renderWordWithThinBlanks(me?.isVerified ? (chosenWord || hints) : hints)}
               </span>
             </div>
           )}
@@ -555,8 +569,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                       <div className="flex flex-col items-end">
                         <span className="text-[8px] text-chamber-secondary uppercase tracking-widest font-cyber block">YOUR DRAWING CODE</span>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-xs font-cyber text-chamber-green glow-green uppercase font-bold tracking-widest">
-                            {showWordToDrawer ? chosenWord : hints}
+                          <span className="text-xs font-cyber text-chamber-green glow-green uppercase font-bold tracking-widest whitespace-pre">
+                            {showWordToDrawer ? chosenWord : renderWordWithThinBlanks(hints, true)}
                           </span>
                           <button
                             onClick={() => {
