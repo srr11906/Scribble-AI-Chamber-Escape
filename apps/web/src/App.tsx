@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { ChamberState, ChamberConfig } from 'shared';
 import { LandingScreen } from './components/LandingScreen';
@@ -18,6 +18,14 @@ const AppContent: React.FC<{ socket: Socket | null }> = ({ socket }) => {
   const [isConnected, setIsConnected] = useState(false);
 
   const { autoplayBlocked, resumeBlockedAudio, joinVoice, leaveVoice, connectionStatus, voiceError, clearVoiceError } = useVoice();
+
+  const chamberStateRef = useRef(chamberState);
+  const codenameRef = useRef(codename);
+
+  useEffect(() => {
+    chamberStateRef.current = chamberState;
+    codenameRef.current = codename;
+  }, [chamberState, codename]);
 
   const [sharedChamberId] = useState<string>(() => {
     const path = window.location.pathname;
@@ -115,6 +123,13 @@ const AppContent: React.FC<{ socket: Socket | null }> = ({ socket }) => {
       console.log('Connected to AI Chamber security uplink.');
       setIsConnected(true);
       setError(null);
+      
+      const currentChamber = chamberStateRef.current;
+      const currentCodename = codenameRef.current;
+      if (currentChamber && currentCodename) {
+        console.log(`Re-establishing uplink for ${currentCodename} in chamber ${currentChamber.chamberId}`);
+        socket.emit('joinChamber', currentCodename, currentChamber.chamberId);
+      }
     };
 
     const onConnectError = () => {

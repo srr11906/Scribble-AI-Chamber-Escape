@@ -9,6 +9,7 @@ export interface ChamberSession {
     wordOptions: string[];
     chosenWord: string | null;
     timer: number;
+    phaseEndsAt?: number;
     hints: string;
     revealedIndices: number[];
     canvasHistory: CompressedStroke[];

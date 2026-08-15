@@ -64,6 +64,7 @@ function serializeSession(session, includeCanvas = false) {
         wordOptions: session.wordOptions,
         chosenWord: session.phase === 'ROUND_RESULTS' || session.phase === 'FINAL_RESULTS' ? session.chosenWord : null,
         timer: session.timer,
+        phaseEndsAt: session.phaseEndsAt,
         hints: session.hints,
     };
     if (includeCanvas) {
@@ -109,6 +110,7 @@ function createChamber(chamberId, hostSocketId, codename) {
         wordOptions: [],
         chosenWord: null,
         timer: 0,
+        phaseEndsAt: 0,
         hints: '',
         revealedIndices: [],
         canvasHistory: [],
@@ -175,12 +177,14 @@ function startWordSelection(session, broadcastState) {
     session.wordOptions = (0, wordDb_1.getRandomWords)(session.config.wordPack, 3, session.config.customWords);
     session.chosenWord = null;
     session.timer = 10; // 10 seconds to select
+    session.phaseEndsAt = Date.now() + 10 * 1000;
     session.hints = '';
     session.revealedIndices = [];
     saveSessionToRedis(session);
     broadcastState();
     const tick = () => {
-        session.timer--;
+        const remaining = Math.max(0, Math.ceil((session.phaseEndsAt - Date.now()) / 1000));
+        session.timer = remaining;
         if (session.timer <= 0) {
             // Auto select first option
             const defaultWord = session.wordOptions[0] || 'idli';
@@ -200,6 +204,7 @@ function selectWord(session, playerId, word, broadcastState) {
     session.chosenWord = word.toLowerCase();
     session.phase = 'DRAWING';
     session.timer = session.config.drawTime;
+    session.phaseEndsAt = Date.now() + session.config.drawTime * 1000;
     session.hints = generateHints(session.chosenWord, []);
     session.revealedIndices = [];
     saveSessionToRedis(session);
@@ -208,7 +213,8 @@ function selectWord(session, playerId, word, broadcastState) {
     const fiftyPercentTime = Math.floor(totalTime * 0.5);
     const seventyFivePercentTime = Math.floor(totalTime * 0.25); // remaining 25%
     const tick = () => {
-        session.timer--;
+        const remaining = Math.max(0, Math.ceil((session.phaseEndsAt - Date.now()) / 1000));
+        session.timer = remaining;
         // Hint revelations
         if (session.chosenWord) {
             const wordLength = session.chosenWord.replace(/\s+/g, '').length;
@@ -248,6 +254,7 @@ function endRound(session, broadcastState) {
     clearSessionTimers(session);
     session.phase = 'ROUND_RESULTS';
     session.timer = 8; // 8 seconds display results
+    session.phaseEndsAt = Date.now() + 8 * 1000;
     // Calculate drawer scoring
     const correctGuessers = session.players.filter(p => p.isVerified && p.id !== session.drawerId && !p.isSpectator);
     const guessersCount = session.players.filter(p => p.id !== session.drawerId && p.isOnline && !p.isSpectator).length;
@@ -268,7 +275,8 @@ function endRound(session, broadcastState) {
     saveSessionToRedis(session);
     broadcastState();
     const tick = () => {
-        session.timer--;
+        const remaining = Math.max(0, Math.ceil((session.phaseEndsAt - Date.now()) / 1000));
+        session.timer = remaining;
         if (session.timer <= 0) {
             // Check if game has ended
             // Simulate next drawer selection to check if cycle wraps around
@@ -286,6 +294,7 @@ function endRound(session, broadcastState) {
                 // Game Over! Transition to final results
                 session.phase = 'FINAL_RESULTS';
                 session.timer = 15;
+                session.phaseEndsAt = Date.now() + 15 * 1000;
                 saveSessionToRedis(session);
                 broadcastState();
             }

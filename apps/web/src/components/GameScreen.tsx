@@ -46,6 +46,26 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   const [copied, setCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Local synchronized timer to prevent network lag/drift
+  const [displayTimer, setDisplayTimer] = useState(timer);
+
+  useEffect(() => {
+    setDisplayTimer(timer);
+  }, [timer, phase]);
+
+  useEffect(() => {
+    if (phase === 'LOBBY' || phase === 'FINAL_RESULTS') return;
+    
+    const targetTime = state.phaseEndsAt || (Date.now() + timer * 1000);
+    
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((targetTime - Date.now()) / 1000));
+      setDisplayTimer(remaining);
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, [phase, state.phaseEndsAt, timer]);
+
 
   const handleCopyChamberCode = () => {
     navigator.clipboard.writeText(`${window.location.origin}/r/${chamberId}`);
@@ -216,9 +236,9 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   // Sort players for leaderboard
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
 
-  // SVG circular countdown progress (timer / drawTime)
+  // SVG circular countdown progress (displayTimer / drawTime)
   const drawTimeMax = state.config.drawTime;
-  const timerPercent = (timer / drawTimeMax) * 100;
+  const timerPercent = (displayTimer / drawTimeMax) * 100;
   const strokeDashoffset = 113 - (113 * timerPercent) / 100;
 
   return (
@@ -615,11 +635,11 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                       stroke="#00F5FF" 
                       strokeWidth="2" 
                       strokeDasharray="113" 
-                      strokeDashoffset={113 - (113 * (timer / 10))} 
+                      strokeDashoffset={113 - (113 * (displayTimer / 10))} 
                       transform="rotate(-90 20 20)" 
                     />
                     <text x="20" y="24" textAnchor="middle" fill="#00F5FF" className="font-mono text-[10px] md:text-xs font-bold font-cyber">
-                      {timer}s
+                      {displayTimer}s
                     </text>
                   </svg>
                   <span className="text-[7px] md:text-[8px] text-chamber-cyan font-cyber tracking-widest uppercase mt-1">SELECTION BUFFER</span>
@@ -642,21 +662,21 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                           cy="20"
                           r="18"
                           fill="none"
-                          stroke={timer <= 15 ? '#FF2E63' : '#00F5FF'}
+                          stroke={displayTimer <= 15 ? '#FF2E63' : '#00F5FF'}
                           strokeWidth="2"
                           strokeDasharray="113"
                           strokeDashoffset={strokeDashoffset}
                           className="transition-all duration-1000"
                         />
                       </svg>
-                      <span className={`absolute font-mono text-[8.5px] sm:text-[10px] font-bold ${timer <= 15 ? 'text-chamber-red animate-pulse' : 'text-chamber-cyan'}`}>
-                        {timer}
+                      <span className={`absolute font-mono text-[8.5px] sm:text-[10px] font-bold ${displayTimer <= 15 ? 'text-chamber-red animate-pulse' : 'text-chamber-cyan'}`}>
+                        {displayTimer}
                       </span>
                     </div>
                     <div>
                       <span className="text-[6.5px] sm:text-[8px] text-chamber-secondary uppercase tracking-widest font-cyber block">OXYGEN LEVEL</span>
-                      <span className={`text-[8.5px] sm:text-[10px] font-cyber tracking-wider ${timer <= 15 ? 'text-chamber-red glow-red animate-pulse' : 'text-chamber-cyan'}`}>
-                        {timer <= 15 ? 'O2 RESERVES CRITICAL' : 'O2 DEGRADING STABLY'}
+                      <span className={`text-[8.5px] sm:text-[10px] font-cyber tracking-wider ${displayTimer <= 15 ? 'text-chamber-red glow-red animate-pulse' : 'text-chamber-cyan'}`}>
+                        {displayTimer <= 15 ? 'O2 RESERVES CRITICAL' : 'O2 DEGRADING STABLY'}
                       </span>
                     </div>
                   </div>
@@ -743,7 +763,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
 
                 <div className="mt-3 md:mt-8 flex flex-col items-center shrink-0">
                   <span className="text-[7px] md:text-[8px] text-chamber-secondary font-cyber tracking-widest uppercase">VENTILATING CHAMBER IN</span>
-                  <span className="text-sm md:text-lg font-mono text-chamber-cyan glow-cyan mt-0.5">{timer}s</span>
+                  <span className="text-sm md:text-lg font-mono text-chamber-cyan glow-cyan mt-0.5">{displayTimer}s</span>
                 </div>
               </div>
             )}

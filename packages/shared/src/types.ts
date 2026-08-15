@@ -65,6 +65,7 @@ export interface ChamberState {
   wordOptions: string[];
   chosenWord: string | null; // Null for guessers during drawing, shown for drawer and in results
   timer: number; // Seconds remaining (Oxygen)
+  phaseEndsAt?: number; // Epoch timestamp of when the phase ends
   hints: string; // E.g., "_ _ a _ _"
   canvasHistory?: CompressedStroke[]; // Backlog of drawing for newly connected players
 }

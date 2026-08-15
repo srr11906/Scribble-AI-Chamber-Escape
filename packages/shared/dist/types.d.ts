@@ -58,6 +58,7 @@ export interface ChamberState {
     wordOptions: string[];
     chosenWord: string | null;
     timer: number;
+    phaseEndsAt?: number;
     hints: string;
     canvasHistory?: CompressedStroke[];
 }

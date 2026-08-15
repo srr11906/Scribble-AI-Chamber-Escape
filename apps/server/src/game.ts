@@ -12,6 +12,7 @@ export interface ChamberSession {
   wordOptions: string[];
   chosenWord: string | null;
   timer: number;
+  phaseEndsAt?: number;
   hints: string;
   revealedIndices: number[];
   canvasHistory: CompressedStroke[];
@@ -75,6 +76,7 @@ export function serializeSession(session: ChamberSession, includeCanvas = false)
     wordOptions: session.wordOptions,
     chosenWord: session.phase === 'ROUND_RESULTS' || session.phase === 'FINAL_RESULTS' ? session.chosenWord : null,
     timer: session.timer,
+    phaseEndsAt: session.phaseEndsAt,
     hints: session.hints,
   };
 
@@ -125,6 +127,7 @@ export function createChamber(chamberId: string, hostSocketId: string, codename:
     wordOptions: [],
     chosenWord: null,
     timer: 0,
+    phaseEndsAt: 0,
     hints: '',
     revealedIndices: [],
     canvasHistory: [],
@@ -198,6 +201,7 @@ export function startWordSelection(session: ChamberSession, broadcastState: () =
   session.wordOptions = getRandomWords(session.config.wordPack, 3, session.config.customWords);
   session.chosenWord = null;
   session.timer = 10; // 10 seconds to select
+  session.phaseEndsAt = Date.now() + 10 * 1000;
   session.hints = '';
   session.revealedIndices = [];
 
@@ -205,7 +209,8 @@ export function startWordSelection(session: ChamberSession, broadcastState: () =
   broadcastState();
 
   const tick = () => {
-    session.timer--;
+    const remaining = Math.max(0, Math.ceil((session.phaseEndsAt! - Date.now()) / 1000));
+    session.timer = remaining;
     if (session.timer <= 0) {
       // Auto select first option
       const defaultWord = session.wordOptions[0] || 'idli';
@@ -225,6 +230,7 @@ export function selectWord(session: ChamberSession, playerId: string, word: stri
   session.chosenWord = word.toLowerCase();
   session.phase = 'DRAWING';
   session.timer = session.config.drawTime;
+  session.phaseEndsAt = Date.now() + session.config.drawTime * 1000;
   session.hints = generateHints(session.chosenWord, []);
   session.revealedIndices = [];
   
@@ -236,7 +242,8 @@ export function selectWord(session: ChamberSession, playerId: string, word: stri
   const seventyFivePercentTime = Math.floor(totalTime * 0.25); // remaining 25%
 
   const tick = () => {
-    session.timer--;
+    const remaining = Math.max(0, Math.ceil((session.phaseEndsAt! - Date.now()) / 1000));
+    session.timer = remaining;
     
     // Hint revelations
     if (session.chosenWord) {
@@ -278,6 +285,7 @@ export function endRound(session: ChamberSession, broadcastState: () => void) {
   clearSessionTimers(session);
   session.phase = 'ROUND_RESULTS';
   session.timer = 8; // 8 seconds display results
+  session.phaseEndsAt = Date.now() + 8 * 1000;
 
   // Calculate drawer scoring
   const correctGuessers = session.players.filter(p => p.isVerified && p.id !== session.drawerId && !p.isSpectator);
@@ -305,7 +313,8 @@ export function endRound(session: ChamberSession, broadcastState: () => void) {
   broadcastState();
 
   const tick = () => {
-    session.timer--;
+    const remaining = Math.max(0, Math.ceil((session.phaseEndsAt! - Date.now()) / 1000));
+    session.timer = remaining;
     if (session.timer <= 0) {
       // Check if game has ended
       // Simulate next drawer selection to check if cycle wraps around
@@ -325,6 +334,7 @@ export function endRound(session: ChamberSession, broadcastState: () => void) {
         // Game Over! Transition to final results
         session.phase = 'FINAL_RESULTS';
         session.timer = 15;
+        session.phaseEndsAt = Date.now() + 15 * 1000;
         saveSessionToRedis(session);
         broadcastState();
       } else {
