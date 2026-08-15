@@ -22,7 +22,7 @@ export function runTests() {
   // Test 2: Guess Scoring
   const mockPlayer: Player = {
     id: "socket-1",
-    codename: "PRIYA",
+    codename: "USERNAME",
     score: 0,
     isHost: false,
     isOnline: true,

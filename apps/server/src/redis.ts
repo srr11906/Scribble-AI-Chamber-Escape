@@ -2,6 +2,7 @@ import { createClient } from 'redis';
 
 let useInMemory = true;
 const memoryStore = new Map<string, string>();
+const memoryExpiries = new Map<string, NodeJS.Timeout>();
 let redisClient: ReturnType<typeof createClient> | null = null;
 
 export async function initRedis() {
@@ -35,9 +36,14 @@ export async function setVal(key: string, value: string, expireSeconds?: number)
   if (useInMemory || !redisClient) {
     memoryStore.set(key, value);
     if (expireSeconds) {
-      setTimeout(() => {
+      if (memoryExpiries.has(key)) {
+        clearTimeout(memoryExpiries.get(key));
+      }
+      const timeout = setTimeout(() => {
         memoryStore.delete(key);
+        memoryExpiries.delete(key);
       }, expireSeconds * 1000);
+      memoryExpiries.set(key, timeout);
     }
     return;
   }

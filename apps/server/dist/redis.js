@@ -7,6 +7,7 @@ exports.delVal = delVal;
 const redis_1 = require("redis");
 let useInMemory = true;
 const memoryStore = new Map();
+const memoryExpiries = new Map();
 let redisClient = null;
 async function initRedis() {
     const REDIS_URL = process.env.REDIS_URL;
@@ -36,9 +37,14 @@ async function setVal(key, value, expireSeconds) {
     if (useInMemory || !redisClient) {
         memoryStore.set(key, value);
         if (expireSeconds) {
-            setTimeout(() => {
+            if (memoryExpiries.has(key)) {
+                clearTimeout(memoryExpiries.get(key));
+            }
+            const timeout = setTimeout(() => {
                 memoryStore.delete(key);
+                memoryExpiries.delete(key);
             }, expireSeconds * 1000);
+            memoryExpiries.set(key, timeout);
         }
         return;
     }

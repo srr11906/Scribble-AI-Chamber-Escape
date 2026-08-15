@@ -11,11 +11,13 @@ interface VoiceContextProps {
   connectionStatus: ConnectionStatus;
   peersVoiceState: Record<string, PeerVoiceState>;
   autoplayBlocked: boolean;
+  voiceError: string | null;
   toggleMic: () => Promise<void>;
   toggleSpeaker: () => void;
   joinVoice: () => Promise<void>;
   leaveVoice: () => void;
   resumeBlockedAudio: () => void;
+  clearVoiceError: () => void;
 }
 
 const VoiceContext = createContext<VoiceContextProps | undefined>(undefined);
@@ -39,6 +41,7 @@ export const VoiceProvider: React.FC<VoiceProviderProps> = ({ socket, children }
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('DISCONNECTED');
   const [peersVoiceState, setPeersVoiceState] = useState<Record<string, PeerVoiceState>>({});
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
 
   const managerRef = useRef<VoiceManager | null>(null);
   const analyserRef = useRef<AudioAnalyser | null>(null);
@@ -60,6 +63,11 @@ export const VoiceProvider: React.FC<VoiceProviderProps> = ({ socket, children }
       },
       onConnectionStatusChange: (status) => {
         setConnectionStatus(status);
+        if (status === 'ERROR') {
+          setVoiceError(manager.lastError || 'MICROPHONE ACCESS FAILED.');
+        } else {
+          setVoiceError(null);
+        }
       },
       onAutoplayBlocked: () => {
         setAutoplayBlocked(true);
@@ -115,6 +123,7 @@ export const VoiceProvider: React.FC<VoiceProviderProps> = ({ socket, children }
       managerRef.current.leaveVoice();
     }
     setAutoplayBlocked(false);
+    setVoiceError(null);
   };
 
   const toggleMic = async () => {
@@ -136,6 +145,10 @@ export const VoiceProvider: React.FC<VoiceProviderProps> = ({ socket, children }
     }
   };
 
+  const clearVoiceError = () => {
+    setVoiceError(null);
+  };
+
   return (
     <VoiceContext.Provider
       value={{
@@ -144,11 +157,13 @@ export const VoiceProvider: React.FC<VoiceProviderProps> = ({ socket, children }
         connectionStatus,
         peersVoiceState,
         autoplayBlocked,
+        voiceError,
         toggleMic,
         toggleSpeaker,
         joinVoice,
         leaveVoice,
-        resumeBlockedAudio
+        resumeBlockedAudio,
+        clearVoiceError
       }}
     >
       {children}

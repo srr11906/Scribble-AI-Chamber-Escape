@@ -32,6 +32,10 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
   const [mobileTab, setMobileTab] = useState<'protocols' | 'subjects'>('subjects');
   const [customWordsText, setCustomWordsText] = useState(config.customWords.join(', '));
 
+  useEffect(() => {
+    setCustomWordsText(config.customWords.join(', '));
+  }, [config.customWords]);
+
   const shareUrl = `${window.location.origin}/r/${chamberId}`;
 
   const handleCopyLink = () => {
@@ -72,7 +76,6 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {/* Voice Controls */}
-          {/* Voice Controls */}
           <button
             onClick={toggleMic}
             className={`p-1 sm:px-2 sm:py-1 border rounded text-[9px] font-cyber tracking-widest transition-all cursor-pointer flex items-center justify-center gap-1 shrink-0 ${
@@ -83,7 +86,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
             title="Toggle Microphone"
           >
             {micEnabled ? <Mic size={11} /> : <MicOff size={11} />}
-            <span className="hidden sm:inline">Microphone: {micEnabled ? 'ON' : 'OFF'}</span>
+            <span className="hidden sm:inline">Microphone: {micEnabled ? 'ACTIVE' : 'MUTED'}</span>
           </button>
           
           <button
@@ -96,7 +99,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
             title="Toggle Voice Speaker"
           >
             {speakerEnabled ? <Volume2 size={11} /> : <VolumeX size={11} />}
-            <span className="hidden sm:inline">Speaker: {speakerEnabled ? 'ON' : 'OFF'}</span>
+            <span className="hidden sm:inline">Speaker: {speakerEnabled ? 'ACTIVE' : 'MUTED'}</span>
           </button>
 
           {(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) && (

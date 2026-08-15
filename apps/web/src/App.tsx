@@ -17,7 +17,7 @@ const AppContent: React.FC<{ socket: Socket | null }> = ({ socket }) => {
   const [audioMuted, setAudioMuted] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
 
-  const { autoplayBlocked, resumeBlockedAudio, joinVoice, leaveVoice, connectionStatus } = useVoice();
+  const { autoplayBlocked, resumeBlockedAudio, joinVoice, leaveVoice, connectionStatus, voiceError, clearVoiceError } = useVoice();
 
   const [sharedChamberId] = useState<string>(() => {
     const path = window.location.pathname;
@@ -297,6 +297,16 @@ const AppContent: React.FC<{ socket: Socket | null }> = ({ socket }) => {
           className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-chamber-cyan text-chamber-bg border border-chamber-cyan shadow-cyan-glow font-cyber uppercase tracking-widest text-[9px] font-black px-4 py-2.5 rounded-lg cursor-pointer z-[250] hover:scale-105 active:scale-95 transition-all text-center animate-pulse animate-duration-1000"
         >
           ⚠️ TAP HERE TO UNLOCK REMOTE CHAMBER AUDIO STABILIZER
+        </div>
+      )}
+
+      {/* Voice Error Alert Banner */}
+      {voiceError && (
+        <div 
+          onClick={clearVoiceError}
+          className="fixed top-4 left-1/2 -translate-x-1/2 bg-chamber-red text-chamber-text border border-chamber-red/60 shadow-red-glow font-cyber uppercase tracking-widest text-[9px] font-black px-4 py-2.5 rounded-lg cursor-pointer z-[250] hover:scale-105 active:scale-95 transition-all text-center animate-pulse"
+        >
+          ⚠️ {voiceError} (TAP TO DISMISS)
         </div>
       )}
     </div>

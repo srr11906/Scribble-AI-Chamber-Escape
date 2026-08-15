@@ -1,6 +1,6 @@
 # AI Chamber Escape — Multiplayer social survival game
 
-**AI Chamber Escape** is a cinematic, tense, and competitive multiplayer drawing game inspired by Skribbl.io mechanics, styled with a premium futuristic sci-fi theme. 
+**AI Chamber Escape** is a cinematic, tense, and competitive multiplayer drawing game with a premium futuristic sci-fi theme. 
 
 Up to 12 players are sealed inside a high-security AI chamber. One player transmits "survival codes" via neural draw signals (drawing on the canvas) while others crack the codes (guessing in real time through chat). Only the top 3 players verified by the AI core will escape when the final protocol concludes; the rest remain contained.
 
@@ -13,7 +13,7 @@ Up to 12 players are sealed inside a high-security AI chamber. One player transm
 - **Local latency minimization**: Drawer strokes render instantly (<16 ms) on the active client canvas without waiting for server network loops.
 - **Web Audio API synthesizer**: Programmatic audio engine generates background hum drones, verification chimes, warning counts, and door operations entirely in code (no media assets to download).
 - **Persistent rejoining grace**: Players re-uplink within 60 seconds to restore their seats, scores, and verified states.
-- **Contextual AI Security Feed**: The AI system core monitors chat answers, times, and errors, outputting alerts like `SUBJECT PRIYA — RESPONSE EFFICIENCY EXCELLENT` to build tension.
+- **Contextual AI Security Feed**: The AI system core monitors chat answers, times, and errors, outputting alerts like `SUBJECT USERNAME — RESPONSE EFFICIENCY EXCELLENT` to build tension.
 - **Redis state integration**: Seamless chamber sessions backup with graceful in-memory falling back for local debugging.
 
 ---

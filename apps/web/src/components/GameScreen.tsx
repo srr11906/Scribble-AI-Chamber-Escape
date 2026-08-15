@@ -431,7 +431,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                 }`}
               >
                 {micEnabled ? <Mic size={11} /> : <MicOff size={11} />}
-                <span>{micEnabled ? 'Microphone' : 'Muted'}</span>
+                <span>{micEnabled ? 'Mic: ACTIVE' : 'Mic: MUTED'}</span>
               </button>
               
               <button
@@ -443,7 +443,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                 }`}
               >
                 {speakerEnabled ? <Volume2 size={11} /> : <VolumeX size={11} />}
-                <span>{speakerEnabled ? 'Speaker' : 'Muted'}</span>
+                <span>{speakerEnabled ? 'Speaker: ACTIVE' : 'Speaker: MUTED'}</span>
               </button>
             </div>
           </div>

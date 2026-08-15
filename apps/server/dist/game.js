@@ -271,10 +271,15 @@ function endRound(session, broadcastState) {
         session.timer--;
         if (session.timer <= 0) {
             // Check if game has ended
-            const nextDrawerIndex = (session.drawerIndex + 1) % session.players.length;
-            // A cycle is complete when we loop back to player 0
+            // Simulate next drawer selection to check if cycle wraps around
+            let nextIndex = (session.drawerIndex + 1) % session.players.length;
+            let attempts = 0;
+            while ((!session.players[nextIndex].isOnline || session.players[nextIndex].isSpectator) && attempts < session.players.length) {
+                nextIndex = (nextIndex + 1) % session.players.length;
+                attempts++;
+            }
             let cycleIncrement = 0;
-            if (nextDrawerIndex === 0) {
+            if (nextIndex <= session.drawerIndex || attempts >= session.players.length) {
                 cycleIncrement = 1;
             }
             if (session.currentCycle + cycleIncrement > session.config.cycles) {

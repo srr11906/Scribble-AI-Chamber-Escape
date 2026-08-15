@@ -32,6 +32,7 @@ export class VoiceManager {
   public micEnabled = false;
   public speakerEnabled = true;
   public connectionStatus: ConnectionStatus = 'DISCONNECTED';
+  public lastError: string | null = null;
   
   private onPeersChange: (peers: Map<string, PeerVoiceState>) => void;
   private onLocalStateChange: (state: { micEnabled: boolean; speakerEnabled: boolean }) => void;
@@ -188,7 +189,18 @@ export class VoiceManager {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
-          channelCount: 1
+          sampleRate: 48000,
+          sampleSize: 16,
+          channelCount: 1,
+          // Legacy/Browser-specific low latency audio processing hints
+          // @ts-ignore
+          googEchoCancellation: true,
+          // @ts-ignore
+          googNoiseSuppression: true,
+          // @ts-ignore
+          googAutoGainControl: true,
+          // @ts-ignore
+          googHighpassFilter: true,
         }
       });
 
@@ -208,10 +220,19 @@ export class VoiceManager {
       });
 
       return true;
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to get local mic stream:', e);
       this.micEnabled = false;
       this.onLocalStateChange({ micEnabled: false, speakerEnabled: this.speakerEnabled });
+      
+      let errorMsg = 'MICROPHONE ACCESS FAILED. DEVICE UNAVAILABLE.';
+      if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+        errorMsg = 'MICROPHONE PERMISSION BLOCKED. UNLOCK IN BROWSER SETTINGS.';
+      } else if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
+        errorMsg = 'NO MICROPHONE HARDWARE DETECTED ON THIS DEVICE.';
+      }
+      this.lastError = errorMsg;
+      
       this.onConnectionStatusChange('ERROR');
       return false;
     }
@@ -259,7 +280,9 @@ export class VoiceManager {
 
   private createPeerConnection(peerId: string): RTCPeerConnection {
     const pc = new RTCPeerConnection({
-      iceServers: getIceServers()
+      iceServers: getIceServers(),
+      bundlePolicy: 'max-bundle',
+      rtcpMuxPolicy: 'require'
     });
 
     // Add local track if we have it
