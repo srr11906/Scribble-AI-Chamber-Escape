@@ -51,7 +51,15 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({
 
     const onRemoteDraw = (stroke: CompressedStroke) => {
       localHistoryRef.current = [...localHistoryRef.current, stroke];
-      scheduleRedraw();
+      
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          drawCompressedStroke(ctx, stroke);
+        }
+      }
+      setLocalHistory(localHistoryRef.current);
     };
 
     const onRemoteClear = () => {

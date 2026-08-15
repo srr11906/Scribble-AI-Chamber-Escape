@@ -167,11 +167,11 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
       </div>
 
       {/* Main Grid */}
-      <main className="flex-1 w-full max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-3 min-h-0 overflow-y-auto lg:overflow-hidden pr-0.5">
+      <main className="flex-1 w-full max-w-5xl mx-auto flex flex-col lg:grid lg:grid-cols-3 gap-4 md:gap-6 mb-3 min-h-0 overflow-hidden pr-0.5 z-10">
         {/* Left Column: Configuration */}
-        <section className={`lg:col-span-2 flex flex-col gap-4 min-h-0 lg:overflow-y-auto pr-0.5 ${mobileTab === 'protocols' ? 'flex' : 'hidden lg:flex'}`}>
+        <section className={`lg:col-span-2 flex flex-col gap-3 min-h-0 overflow-y-auto pr-0.5 pb-2 ${mobileTab === 'protocols' ? 'flex' : 'hidden lg:flex'}`}>
           {/* Share Box */}
-          <div className="hologram-panel rounded-xl p-5 border border-chamber-cyan/20">
+          <div className="hologram-panel rounded-xl p-3.5 sm:p-5 border border-chamber-cyan/20">
             <h3 className="text-xs text-chamber-secondary uppercase tracking-widest font-cyber mb-3">
               Chamber access key
             </h3>
@@ -193,13 +193,13 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
           </div>
 
           {/* Config Parameters */}
-          <div className="hologram-panel rounded-xl p-6 border border-chamber-cyan/20 flex-1 flex flex-col justify-between">
+          <div className="hologram-panel rounded-xl p-3.5 sm:p-5 border border-chamber-cyan/20 flex-1 flex flex-col justify-between">
             <div>
               <h3 className="text-xs text-chamber-secondary uppercase tracking-widest font-cyber border-b border-chamber-cyan/10 pb-2 mb-4">
                 Chamber protocols
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 {/* Max Players */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] text-chamber-secondary uppercase tracking-wider flex items-center gap-1.5 font-cyber">
@@ -295,7 +295,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                     onChange={e => setCustomWordsText(e.target.value)}
                     onBlur={handleCustomWordsBlur}
                     placeholder="E.g. maggi, autos, placement, metro, paneer"
-                    className="w-full h-24 bg-chamber-bg border border-chamber-cyan/20 hover:border-chamber-cyan/40 focus:border-chamber-cyan/70 focus:outline-none rounded-lg px-3 py-2 text-xs font-mono text-chamber-text resize-none placeholder:text-chamber-secondary/40 disabled:opacity-50"
+                    className="w-full h-16 sm:h-24 bg-chamber-bg border border-chamber-cyan/20 hover:border-chamber-cyan/40 focus:border-chamber-cyan/70 focus:outline-none rounded-lg px-3 py-2 text-xs font-mono text-chamber-text resize-none placeholder:text-chamber-secondary/40 disabled:opacity-50"
                   />
                 </div>
               )}
@@ -312,18 +312,18 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
         </section>
 
         {/* Right Column: Player Roster */}
-        <section className={`hologram-panel rounded-xl border border-chamber-cyan/20 p-4 flex flex-col justify-between min-h-0 overflow-hidden ${mobileTab === 'subjects' ? 'flex' : 'hidden lg:flex'}`}>
+        <section className={`hologram-panel rounded-xl border border-chamber-cyan/20 p-3 sm:p-4 flex flex-col justify-between min-h-0 overflow-hidden ${mobileTab === 'subjects' ? 'flex' : 'hidden lg:flex'}`}>
           <div className="flex flex-col min-h-0 flex-1">
             <h3 className="text-xs text-chamber-secondary uppercase tracking-widest font-cyber border-b border-chamber-cyan/10 pb-2 mb-3 flex items-center gap-1.5 shrink-0">
               <Users size={14} className="text-chamber-cyan" />
               Chamber Subjects ({players.filter(p => !p.isSpectator).length} / {config.maxPlayers})
             </h3>
 
-            <div className="space-y-2 flex-1 overflow-y-auto pr-1 min-h-[120px]">
+            <div className="space-y-1.5 flex-1 overflow-y-auto pr-1 min-h-[120px]">
               {players.map(player => (
                 <div
                   key={player.id}
-                  className={`flex items-center justify-between p-2.5 bg-chamber-bg border rounded-lg transition-all ${
+                  className={`flex items-center justify-between p-2 sm:p-2.5 bg-chamber-bg border rounded-lg transition-all ${
                     player.speaking
                       ? 'border-chamber-cyan shadow-cyan-glow bg-chamber-cyan/5 scale-[1.01]'
                       : 'border-chamber-cyan/10'
@@ -382,7 +382,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
           </div>
 
           {/* Start Action */}
-          <div className="mt-6 pt-4 border-t border-chamber-cyan/10">
+          <div className="mt-3 sm:mt-6 pt-3 sm:pt-4 border-t border-chamber-cyan/10">
             {isHost ? (
               <button
                 onClick={() => {
