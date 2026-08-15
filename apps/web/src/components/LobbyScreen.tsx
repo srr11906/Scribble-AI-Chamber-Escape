@@ -351,7 +351,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
                                   : 'border-chamber-cyan/10 text-chamber-secondary/70 bg-chamber-surface/10 hover:border-chamber-cyan/30 hover:text-chamber-text'
                               } disabled:cursor-not-allowed`}
                             >
-                              <span>{cat === 'movies' ? '🎬 Movies' : `${cat}`}</span>
+                              <span>{cat}</span>
                               {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-chamber-cyan animate-pulse shadow-cyan-glow" />}
                             </button>
                           );

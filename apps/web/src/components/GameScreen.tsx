@@ -44,6 +44,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   const [revealedRanksCount, setRevealedRanksCount] = useState(0);
   const [showWordToDrawer, setShowWordToDrawer] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
 
   const handleCopyChamberCode = () => {
@@ -227,11 +228,106 @@ export const GameScreen: React.FC<GameScreenProps> = ({
     >
       <div className="scanlines animate-scanline" />
 
+      {/* Holographic Side Navigation Drawer */}
+      {menuOpen && (
+        <div className="absolute inset-0 bg-chamber-bg/85 backdrop-blur-sm z-50 flex justify-start">
+          <div className="w-64 max-w-[80vw] h-full bg-chamber-surface/95 border-r border-chamber-cyan/20 p-4 flex flex-col justify-between shadow-cyan-glow relative animate-crt-flicker">
+            <button 
+              onClick={() => {
+                setMenuOpen(false);
+                audioSystem.playBeep();
+              }}
+              className="absolute top-3 right-3 text-chamber-secondary hover:text-chamber-red transition-colors text-[9px] font-cyber tracking-widest cursor-pointer"
+            >
+              [ CLOSE ]
+            </button>
+            
+            <div className="space-y-6 mt-8">
+              <div className="flex items-center gap-3 border-b border-chamber-cyan/15 pb-4">
+                <NeonCore size="md" />
+                <div>
+                  <h3 className="text-xs font-cyber font-bold text-chamber-cyan uppercase tracking-widest">
+                    Chamber Core
+                  </h3>
+                  <span className="text-[7px] text-chamber-secondary font-cyber tracking-widest block uppercase">
+                    TERMINAL STATUS: ONLINE
+                  </span>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[8px] text-chamber-secondary uppercase tracking-widest font-cyber block mb-1">
+                    Current Cycle
+                  </label>
+                  <div className="text-xs font-cyber font-bold text-chamber-cyan">
+                    CYCLE {state.currentCycle} / {state.config.cycles}
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-[8px] text-chamber-secondary uppercase tracking-widest font-cyber block mb-1">
+                    Chamber Code
+                  </label>
+                  <button
+                    onClick={() => {
+                      handleCopyChamberCode();
+                      setMenuOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between p-2 bg-chamber-bg border border-chamber-cyan/15 hover:border-chamber-cyan/35 rounded-lg text-xs font-mono text-chamber-cyan cursor-pointer transition-all"
+                  >
+                    <span>{chamberId}</span>
+                    <Copy size={11} className="text-chamber-cyan" />
+                  </button>
+                </div>
+
+                <div className="border-t border-chamber-cyan/10 pt-4">
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      audioSystem.playBuzz();
+                      onLeaveChamber();
+                    }}
+                    className="w-full py-2 border border-chamber-red/25 hover:border-chamber-red text-chamber-red bg-chamber-red/10 rounded-lg text-[9px] font-cyber tracking-widest transition-all cursor-pointer text-center"
+                  >
+                    ABORT MATCH
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="text-[7px] text-chamber-secondary/40 font-cyber tracking-widest uppercase">
+              NAVIGATION TERMINAL V2.5
+            </div>
+          </div>
+          
+          <div 
+            className="flex-1 h-full cursor-pointer" 
+            onClick={() => {
+              setMenuOpen(false);
+              audioSystem.playBeep();
+            }}
+          />
+        </div>
+      )}
+
       {/* 1. Header Bar */}
       <header className="px-3 py-2 border-b border-chamber-cyan/15 bg-chamber-surface/65 backdrop-blur-md flex justify-between items-center z-30 gap-2">
         <div className="flex items-center gap-1.5 md:gap-3 shrink-0 relative">
-          <NeonCore size="sm" />
-          <div>
+          <button 
+            type="button"
+            onClick={() => {
+              setMenuOpen(!menuOpen);
+              audioSystem.playBeep();
+            }}
+            className="cursor-pointer focus:outline-none hover:scale-105 active:scale-95 transition-transform"
+            title="Chamber Control Feed"
+          >
+            <NeonCore size="sm" />
+          </button>
+          
+          {/* Desktop Only Details */}
+          <div className="hidden md:block">
             <h2 className="text-xs md:text-sm font-cyber font-extrabold text-chamber-cyan tracking-wider">
               <span className="hidden sm:inline">CHAMBER </span>CYCLE {state.currentCycle} / {state.config.cycles}
             </h2>
@@ -254,10 +350,10 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         <div className="flex-1 flex justify-center px-1 sm:px-4 min-w-0">
           {phase === 'DRAWING' && (
             <div className="flex flex-col items-center max-w-full">
-              <span className="text-[8px] sm:text-[9px] text-chamber-secondary uppercase tracking-widest font-cyber block text-center truncate w-full">
+              <span className="text-[6.5px] sm:text-[9px] text-chamber-secondary uppercase tracking-widest font-cyber block text-center truncate w-full">
                 {me?.isVerified ? 'SURVIVAL CODE RESOLVED' : 'SURVIVAL CODE HINT'}
               </span>
-              <span className="text-[9px] sm:text-base md:text-xl font-mono tracking-[0.04em] sm:tracking-[0.12em] md:tracking-[0.25em] text-chamber-cyan font-bold glow-cyan select-text uppercase whitespace-pre overflow-hidden text-center truncate max-w-[200px] sm:max-w-xs md:max-w-none">
+              <span className="text-[7.5px] sm:text-base md:text-xl font-mono tracking-[0.04em] sm:tracking-[0.12em] md:tracking-[0.25em] text-chamber-cyan font-bold glow-cyan select-text uppercase whitespace-pre overflow-hidden text-center truncate max-w-[200px] sm:max-w-xs md:max-w-none">
                 {renderWordWithThinBlanks(me?.isVerified ? (chosenWord || hints) : hints)}
               </span>
             </div>
@@ -553,13 +649,13 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                           className="transition-all duration-1000"
                         />
                       </svg>
-                      <span className={`absolute font-mono text-[10px] font-bold ${timer <= 15 ? 'text-chamber-red animate-pulse' : 'text-chamber-cyan'}`}>
+                      <span className={`absolute font-mono text-[8.5px] sm:text-[10px] font-bold ${timer <= 15 ? 'text-chamber-red animate-pulse' : 'text-chamber-cyan'}`}>
                         {timer}
                       </span>
                     </div>
                     <div>
-                      <span className="text-[8px] text-chamber-secondary uppercase tracking-widest font-cyber block">OXYGEN LEVEL</span>
-                      <span className={`text-[10px] font-cyber tracking-wider ${timer <= 15 ? 'text-chamber-red glow-red animate-pulse' : 'text-chamber-cyan'}`}>
+                      <span className="text-[6.5px] sm:text-[8px] text-chamber-secondary uppercase tracking-widest font-cyber block">OXYGEN LEVEL</span>
+                      <span className={`text-[8.5px] sm:text-[10px] font-cyber tracking-wider ${timer <= 15 ? 'text-chamber-red glow-red animate-pulse' : 'text-chamber-cyan'}`}>
                         {timer <= 15 ? 'O2 RESERVES CRITICAL' : 'O2 DEGRADING STABLY'}
                       </span>
                     </div>
@@ -569,9 +665,9 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                   <div className="text-right">
                     {isDrawer ? (
                       <div className="flex flex-col items-end">
-                        <span className="text-[8px] text-chamber-secondary uppercase tracking-widest font-cyber block">YOUR DRAWING CODE</span>
+                        <span className="text-[6.5px] sm:text-[8px] text-chamber-secondary uppercase tracking-widest font-cyber block">YOUR DRAWING CODE</span>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-xs font-cyber text-chamber-green glow-green uppercase font-bold tracking-widest whitespace-pre">
+                          <span className="text-[9.5px] sm:text-xs font-cyber text-chamber-green glow-green uppercase font-bold tracking-widest whitespace-pre">
                             {showWordToDrawer ? chosenWord : renderWordWithThinBlanks(hints, true)}
                           </span>
                           <button
@@ -588,8 +684,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
                       </div>
                     ) : (
                       <div>
-                        <span className="text-[8px] text-chamber-secondary uppercase tracking-widest font-cyber block">TRANSMITTING SIGNAL</span>
-                        <span className="text-xs font-cyber text-chamber-red uppercase tracking-wider">
+                        <span className="text-[6.5px] sm:text-[8px] text-chamber-secondary uppercase tracking-widest font-cyber block">TRANSMITTING SIGNAL</span>
+                        <span className="text-[9.5px] sm:text-xs font-cyber text-chamber-red uppercase tracking-wider">
                           SUBJECT: {activeDrawer?.codename.toUpperCase()}
                         </span>
                       </div>
