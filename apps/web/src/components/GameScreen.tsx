@@ -10,6 +10,7 @@ import {
 import { audioSystem } from './AudioSystem';
 import { useVoice } from '../voice/VoiceContext';
 import confetti from 'canvas-confetti';
+import { NeonCore } from './NeonCore';
 
 interface GameScreenProps {
   state: ChamberState;
@@ -229,6 +230,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       {/* 1. Header Bar */}
       <header className="px-3 py-2 border-b border-chamber-cyan/15 bg-chamber-surface/65 backdrop-blur-md flex justify-between items-center z-30 gap-2">
         <div className="flex items-center gap-1.5 md:gap-3 shrink-0 relative">
+          <NeonCore size="sm" />
           <div>
             <h2 className="text-xs md:text-sm font-cyber font-extrabold text-chamber-cyan tracking-wider">
               <span className="hidden sm:inline">CHAMBER </span>CYCLE {state.currentCycle} / {state.config.cycles}

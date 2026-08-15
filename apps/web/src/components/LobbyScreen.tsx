@@ -4,6 +4,7 @@ import { WORD_CATEGORIES } from 'shared';
 import { Users, Timer, RefreshCw, Layers, Copy, Trash2, Shield, Play, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { audioSystem } from './AudioSystem';
 import { useVoice } from '../voice/VoiceContext';
+import { NeonCore } from './NeonCore';
 
 interface LobbyScreenProps {
   state: ChamberState;
@@ -66,13 +67,16 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
 
       {/* Header */}
       <header className="w-full max-w-5xl mx-auto flex justify-between items-center border-b border-chamber-cyan/15 pb-2 mb-3 shrink-0">
-        <div>
-          <h2 className="text-lg font-cyber font-extrabold tracking-wider text-chamber-cyan animate-pulse">
-            CHAMBER {chamberId}
-          </h2>
-          <p className="text-[8px] text-chamber-secondary uppercase tracking-widest mt-0.5">
-            Lobby State — Synchronizing Neural Interfaces
-          </p>
+        <div className="flex items-center gap-2">
+          <NeonCore size="sm" />
+          <div>
+            <h2 className="text-base sm:text-lg font-cyber font-extrabold tracking-wider text-chamber-cyan animate-pulse">
+              CHAMBER {chamberId}
+            </h2>
+            <p className="text-[8px] text-chamber-secondary uppercase tracking-widest mt-0.5">
+              Lobby State — Synchronizing Neural Interfaces
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {/* Voice Controls */}
@@ -118,7 +122,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
               className="p-1 border border-chamber-cyan/20 hover:border-chamber-cyan text-chamber-cyan bg-chamber-cyan/5 rounded text-[9px] font-cyber px-1.5 shrink-0"
               title="Toggle Fullscreen"
             >
-              <span className="hidden sm:inline">FULLSCREEN</span>
+              <span className="hidden sm:inline">FS</span>
               <span className="sm:hidden block px-0.5 font-bold">FS</span>
             </button>
           )}

@@ -50,7 +50,7 @@ export const LandingScreen: React.FC<LandingScreenProps> = ({
       {/* Top Header Controls */}
       <header className="flex justify-between items-center w-full max-w-4xl mx-auto z-10">
         <div className="flex items-center gap-2">
-          <Server size={18} className="text-chamber-cyan animate-pulse" />
+          <NeonCore size="sm" />
           <span className="font-cyber text-[10px] text-chamber-cyan/70 tracking-widest font-bold">
             SECURITY SYSTEM V25.8
           </span>
