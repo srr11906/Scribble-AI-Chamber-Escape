@@ -5,7 +5,7 @@ import { LandingScreen } from './components/LandingScreen';
 import { LobbyScreen } from './components/LobbyScreen';
 import { GameScreen } from './components/GameScreen';
 import { audioSystem } from './components/AudioSystem';
-import { Eye } from 'lucide-react';
+import { Eye, Layers } from 'lucide-react';
 import { VoiceProvider, useVoice } from './voice/VoiceContext';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:4000';
@@ -26,6 +26,8 @@ const AppContent: React.FC<{ socket: Socket | null }> = ({ socket }) => {
   });
   const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [prevPhase, setPrevPhase] = useState<string | null>(null);
+  const [showHomescreenPrompt, setShowHomescreenPrompt] = useState(false);
 
   useEffect(() => {
     const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
@@ -42,6 +44,30 @@ const AppContent: React.FC<{ socket: Socket | null }> = ({ socket }) => {
       }
     }
   }, []);
+
+  // Capture PWA deferred install prompt
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      (window as any).deferredInstallPrompt = e;
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  // Track phase transitions for homescreen prompt trigger
+  useEffect(() => {
+    if (chamberState) {
+      if (prevPhase === 'FINAL_RESULTS' && chamberState.phase === 'LOBBY' && isMobileDevice) {
+        setShowHomescreenPrompt(true);
+      }
+      setPrevPhase(chamberState.phase);
+    } else {
+      setPrevPhase(null);
+    }
+  }, [chamberState, prevPhase, isMobileDevice]);
 
   const handleEngageFullscreen = () => {
     try {
@@ -307,6 +333,78 @@ const AppContent: React.FC<{ socket: Socket | null }> = ({ socket }) => {
           className="fixed top-4 left-1/2 -translate-x-1/2 bg-chamber-red text-chamber-text border border-chamber-red/60 shadow-red-glow font-cyber uppercase tracking-widest text-[9px] font-black px-4 py-2.5 rounded-lg cursor-pointer z-[250] hover:scale-105 active:scale-95 transition-all text-center animate-pulse"
         >
           ⚠️ {voiceError} (TAP TO DISMISS)
+        </div>
+      )}
+      {/* Mobile Add to Homescreen holographic prompt overlay */}
+      {showHomescreenPrompt && isMobileDevice && (
+        <div className="fixed inset-0 bg-chamber-bg/95 backdrop-blur-md z-[200] flex items-center justify-center p-6 select-none">
+          <div className="hologram-panel border border-chamber-cyan/30 rounded-xl p-5 w-full max-w-sm text-center flex flex-col items-center shadow-cyan-glow relative animate-crt-flicker">
+            <div className="absolute top-2 left-2 font-mono text-[6px] text-chamber-cyan/50 tracking-widest uppercase">
+              SYS_LAUNCH_OPTIMIZATION
+            </div>
+            
+            <div className="w-10 h-10 rounded-full border border-chamber-cyan/20 flex items-center justify-center text-chamber-cyan bg-chamber-cyan/5 mb-3 animate-pulse">
+              <Layers className="w-5 h-5" />
+            </div>
+
+            <h3 className="text-xs font-cyber font-black tracking-widest text-chamber-cyan uppercase mb-1.5">
+              ADD TO HOME SCREEN
+            </h3>
+            
+            <p className="text-[8px] text-chamber-secondary uppercase tracking-wider leading-relaxed mb-4">
+              Install AI Chamber Escape to your home screen for zero-latency launching, native fullscreen, and stable layouts.
+            </p>
+
+            {/* iOS specific guide */}
+            {/iPhone|iPod|iPad/i.test(navigator.userAgent) ? (
+              <div className="border border-chamber-cyan/10 bg-chamber-surface/30 px-3 py-2 rounded text-[7.5px] text-chamber-secondary uppercase tracking-widest leading-normal mb-4 text-left w-full space-y-1">
+                <div className="font-bold text-chamber-cyan flex items-center gap-1">
+                  1. TAP SHARE BUTTON
+                </div>
+                <div className="pl-3">
+                  Tap the Safari <span className="text-white font-cyber font-bold">[Share]</span> icon at the bottom.
+                </div>
+                <div className="font-bold text-chamber-cyan flex items-center gap-1 mt-1.5">
+                  2. ADD TO HOME SCREEN
+                </div>
+                <div className="pl-3">
+                  Scroll down and tap <span className="text-white font-cyber font-bold">"Add to Home Screen"</span>.
+                </div>
+              </div>
+            ) : (
+              <div className="w-full mb-4">
+                <button
+                  onClick={() => {
+                    const promptEvent = (window as any).deferredInstallPrompt;
+                    if (promptEvent) {
+                      promptEvent.prompt();
+                      promptEvent.userChoice.then((choiceResult: any) => {
+                        console.log(`User choice: ${choiceResult.outcome}`);
+                        (window as any).deferredInstallPrompt = null;
+                      });
+                    } else {
+                      alert("Tap the three dots menu in the browser address bar and select 'Install app' or 'Add to Home screen'.");
+                    }
+                    setShowHomescreenPrompt(false);
+                    audioSystem.playLock();
+                  }}
+                  className="w-full py-2 bg-chamber-cyan text-chamber-bg font-cyber tracking-widest font-black uppercase text-[9px] rounded-lg shadow-cyan-glow cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  INSTALL WEB APP
+                </button>
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                setShowHomescreenPrompt(false);
+                audioSystem.playBeep();
+              }}
+              className="text-[8px] text-chamber-secondary hover:text-chamber-red uppercase tracking-widest font-cyber cursor-pointer transition-colors mt-2"
+            >
+              [ DISMISS AND CONTINUE ]
+            </button>
+          </div>
         </div>
       )}
     </div>
