@@ -52,14 +52,14 @@ function runTests() {
         drawingTimeout: null,
         resultsTimeout: null,
     };
-    // Guess score within 10s (timer at 55 means 5s elapsed)
-    // 5s <= 10s -> should give 100 points
+    // Guess score within 15s (timer at 55 means 5s elapsed)
+    // 5s <= 15s -> should give 100 points
     const points = (0, game_1.handleGuessScore)(mockSession, mockPlayer, () => { });
-    assert(points === 100, "Should award 100 points for guess within 10 seconds");
+    assert(points === 100, "Should award 100 points for guess within 15 seconds");
     assert(mockPlayer.score === 100, "Player score should update to 100");
     assert(mockPlayer.isVerified === true, "Player should be marked verified");
     // Test 3: Guess scoring at 30 seconds elapsed (timer at 30)
-    // 30s elapsed is between 21s and 40s -> should give 40 points
+    // 30s elapsed is between 16s and 35s -> should give 70 points
     const mockPlayer2 = {
         id: "socket-2",
         codename: "ARJUN",
@@ -72,7 +72,7 @@ function runTests() {
     };
     mockSession.timer = 30;
     const points2 = (0, game_1.handleGuessScore)(mockSession, mockPlayer2, () => { });
-    assert(points2 === 40, "Should award 40 points for guess within 21-40 seconds");
+    assert(points2 === 70, "Should award 70 points for guess within 16-35 seconds");
     // Test 4: Drawer selection skips Offline and Spectating players
     const playerActive = {
         id: "active-1",

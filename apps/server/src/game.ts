@@ -353,13 +353,13 @@ export function endRound(session: ChamberSession, broadcastState: () => void) {
 export function handleGuessScore(session: ChamberSession, player: Player, broadcastState: () => void): number {
   const timeElapsed = session.config.drawTime - session.timer;
   let points = 20; // default minimum
-  if (timeElapsed <= 10) {
+  if (timeElapsed <= 15) {
     points = 100;
-  } else if (timeElapsed <= 20) {
+  } else if (timeElapsed <= 35) {
     points = 70;
-  } else if (timeElapsed <= 40) {
-    points = 40;
   } else if (timeElapsed <= 60) {
+    points = 40;
+  } else {
     points = 20;
   }
   

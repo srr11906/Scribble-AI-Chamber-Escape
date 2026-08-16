@@ -313,16 +313,16 @@ function endRound(session, broadcastState) {
 function handleGuessScore(session, player, broadcastState) {
     const timeElapsed = session.config.drawTime - session.timer;
     let points = 20; // default minimum
-    if (timeElapsed <= 10) {
+    if (timeElapsed <= 15) {
         points = 100;
     }
-    else if (timeElapsed <= 20) {
+    else if (timeElapsed <= 35) {
         points = 70;
     }
-    else if (timeElapsed <= 40) {
+    else if (timeElapsed <= 60) {
         points = 40;
     }
-    else if (timeElapsed <= 60) {
+    else {
         points = 20;
     }
     player.score += points;
