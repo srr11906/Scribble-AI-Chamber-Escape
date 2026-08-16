@@ -77,11 +77,19 @@ export const VoiceProvider: React.FC<VoiceProviderProps> = ({ socket, children }
     manager.initialize();
     managerRef.current = manager;
 
+    const handleDisconnect = () => {
+      console.warn("Socket disconnected. Resetting active WebRTC peer connections.");
+      manager.disconnectPeers();
+    };
+
+    socket.on('disconnect', handleDisconnect);
+
     return () => {
       if (analyserRef.current) {
         analyserRef.current.stop();
         analyserRef.current = null;
       }
+      socket.off('disconnect', handleDisconnect);
       manager.destroy();
       managerRef.current = null;
     };

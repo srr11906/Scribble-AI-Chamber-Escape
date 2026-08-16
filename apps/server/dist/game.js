@@ -257,7 +257,7 @@ function endRound(session, broadcastState) {
     session.phaseEndsAt = Date.now() + 8 * 1000;
     // Calculate drawer scoring
     const correctGuessers = session.players.filter(p => p.isVerified && p.id !== session.drawerId && !p.isSpectator);
-    const guessersCount = session.players.filter(p => p.id !== session.drawerId && p.isOnline && !p.isSpectator).length;
+    const guessersCount = session.players.filter(p => p.id !== session.drawerId && !p.isSpectator).length;
     const drawer = session.players.find(p => p.id === session.drawerId);
     if (drawer && correctGuessers.length > 0) {
         let drawerBonus = correctGuessers.length * 20;

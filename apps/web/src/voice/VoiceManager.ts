@@ -397,6 +397,26 @@ export class VoiceManager {
     }
   }
 
+  public disconnectPeers() {
+    this.peerConnections.forEach((pc) => {
+      pc.close();
+    });
+    this.peerConnections.clear();
+
+    this.remoteAudios.forEach((audio) => {
+      audio.pause();
+      audio.srcObject = null;
+      audio.remove();
+    });
+    this.remoteAudios.clear();
+
+    this.peersState.clear();
+    this.onPeersChange(new Map());
+    
+    this.connectionStatus = 'DISCONNECTED';
+    this.onConnectionStatusChange('DISCONNECTED');
+  }
+
   public destroy() {
     this.peerConnections.forEach((pc, id) => {
       pc.close();
