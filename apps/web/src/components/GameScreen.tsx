@@ -46,25 +46,32 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   const [copied, setCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Local synchronized timer to prevent network lag/drift
+  // Local synchronized timer to prevent network lag/drift and client clock offsets
   const [displayTimer, setDisplayTimer] = useState(timer);
+  const displayTimerRef = useRef(timer);
 
   useEffect(() => {
-    setDisplayTimer(timer);
+    displayTimerRef.current = displayTimer;
+  }, [displayTimer]);
+
+  // Sync with server timer only if drift is large (> 1.5s), or when phase transitions
+  useEffect(() => {
+    const drift = Math.abs(displayTimerRef.current - timer);
+    if (drift > 1.5 || timer === 0 || phase === 'ROUND_RESULTS' || phase === 'FINAL_RESULTS') {
+      setDisplayTimer(timer);
+    }
   }, [timer, phase]);
 
+  // Smooth local countdown interval
   useEffect(() => {
     if (phase === 'LOBBY' || phase === 'FINAL_RESULTS') return;
-    
-    const targetTime = state.phaseEndsAt || (Date.now() + timer * 1000);
-    
+
     const interval = setInterval(() => {
-      const remaining = Math.max(0, Math.ceil((targetTime - Date.now()) / 1000));
-      setDisplayTimer(remaining);
-    }, 200);
+      setDisplayTimer(t => Math.max(0, t - 1));
+    }, 1000);
 
     return () => clearInterval(interval);
-  }, [phase, state.phaseEndsAt, timer]);
+  }, [phase]);
 
 
   const handleCopyChamberCode = () => {
